@@ -1,0 +1,5 @@
+.idea/
+node_modules/
+package-lock.json
+src/node-seal/node_modules/
+src/node-seal/package-lock.json

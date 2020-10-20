@@ -1,0 +1,135 @@
+{
+  "_args": [
+    [
+      "node-seal@4.3.10",
+      "/home/agrass/Git/2020_master_grass/code/APIR-react"
+    ]
+  ],
+  "_from": "node-seal@4.3.10",
+  "_id": "node-seal@4.3.10",
+  "_inBundle": false,
+  "_integrity": "sha512-KjJLZkNosypWMR9dh5XUtK+Oq1PoYXBFYARyfMrdCZoI2ng3sR/0gpVPyiP+pKiapJ00R4EGi0xznGUm/mGahg==",
+  "_location": "/node-seal",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "node-seal@4.3.10",
+    "name": "node-seal",
+    "escapedName": "node-seal",
+    "rawSpec": "4.3.10",
+    "saveSpec": null,
+    "fetchSpec": "4.3.10"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/node-seal/-/node-seal-4.3.10.tgz",
+  "_spec": "4.3.10",
+  "_where": "/home/agrass/Git/2020_master_grass/code/APIR-react",
+  "author": {
+    "name": "Nick Angelou",
+    "email": "accounts@morfix.io",
+    "url": "https://morfix.io"
+  },
+  "browser": "dist/throws_transparent/web/wasm/index.js",
+  "browserslist": [
+    "since 2017-06"
+  ],
+  "bugs": {
+    "url": "https://github.com/morfix-io/node-seal/issues"
+  },
+  "description": "Homomorphic Encryption in JavaScript using Microsoft SEAL",
+  "devDependencies": {
+    "@babel/core": "^7.10.5",
+    "@babel/preset-env": "^7.10.4",
+    "babel-jest": "^26.1.0",
+    "babel-loader": "^8.1.0",
+    "better-docs": "^2.3.0",
+    "codecov": "^3.7.2",
+    "env-cmd": "^10.1.0",
+    "eslint": "^7.5.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-jsdoc": "^30.0.3",
+    "eslint-plugin-prettier": "^3.1.4",
+    "exports-loader": "^0.7.0",
+    "file-loader": "^6.0.0",
+    "jsdoc": "^3.6.5",
+    "prettier": "^2.0.5",
+    "webpack": "^4.44.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "webpack-node-externals": "^2.5.0"
+  },
+  "files": [
+    "dist/throws_transparent/web/js/index.js",
+    "dist/throws_transparent/web/js/index.js.map",
+    "dist/throws_transparent/web/wasm/index.js",
+    "dist/throws_transparent/web/wasm/index.js.map",
+    "dist/throws_transparent/node/js/index.js",
+    "dist/throws_transparent/node/js/index.js.map",
+    "dist/throws_transparent/node/wasm/index.js",
+    "dist/throws_transparent/node/wasm/index.js.map",
+    "dist/allows_transparent/web/js/index.js",
+    "dist/allows_transparent/web/js/index.js.map",
+    "dist/allows_transparent/web/wasm/index.js",
+    "dist/allows_transparent/web/wasm/index.js.map",
+    "dist/allows_transparent/node/js/index.js",
+    "dist/allows_transparent/node/js/index.js.map",
+    "dist/allows_transparent/node/wasm/index.js",
+    "dist/allows_transparent/node/wasm/index.js.map"
+  ],
+  "homepage": "https://morfix.io/sandbox",
+  "keywords": [
+    "homomorphic",
+    "encryption",
+    "homomorphic-encryption",
+    "microsoft seal",
+    "web assembly",
+    "fhe",
+    "crypto",
+    "cryptography",
+    "cryptosystem"
+  ],
+  "license": "MIT",
+  "main": "dist/throws_transparent/node/wasm/index.js",
+  "module": "dist/throws_transparent/node/wasm/index.js",
+  "name": "node-seal",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morfix-io/node-seal.git"
+  },
+  "scripts": {
+    "benchmark:bfv": "node ./benchmark/exampleBfvPerformanceDefault.js",
+    "benchmark:ckks": "node ./benchmark/exampleCkksPerformanceDefault.js",
+    "build": "npm run build:web && npm run build:node",
+    "build:all": "npm run build:transparent:on && npm run build:transparent:off",
+    "build:clean": "rm -rf ./dist/*",
+    "build:js": "export TARGET=js && eslint ./src/target/js && webpack",
+    "build:node": "export ENVIRONMENT=node && export NODE_ENV=production && npm run build:wasm && npm run build:js",
+    "build:transparent:off": "export THROW_ON_TRANSPARENT=ON && npm run seal:compile && npm run build",
+    "build:transparent:on": "export THROW_ON_TRANSPARENT=OFF && npm run seal:compile && npm run build",
+    "build:wasm": "export TARGET=wasm && eslint ./src/target/wasm && webpack",
+    "build:web": "export ENVIRONMENT=web && export NODE_ENV=production && npm run build:wasm && npm run build:js",
+    "clean": "npm run seal:clean && npm run build:clean",
+    "coverage": "jest --collectCoverageFrom=src/components/**.js --coverage src/test/unit",
+    "coverage:upload": "env-cmd -f .env codecov",
+    "docs": "rm -rf ./docs/* && jsdoc -c jsdoc.json",
+    "em:init": "bash scripts/em-init.sh",
+    "em:update": "bash scripts/em-update.sh",
+    "eslint-check": "eslint --print-config ./src/target/index.js | eslint-config-prettier-check",
+    "seal:build": "npm run seal:build:wasm && npm run seal:build:js",
+    "seal:build:js": "bash scripts/seal-build-js.sh",
+    "seal:build:wasm": "bash scripts/seal-build-wasm.sh",
+    "seal:clean": "bash scripts/seal-clean.sh",
+    "seal:cmake": "bash scripts/seal-cmake.sh",
+    "seal:compile": "npm run seal:clean && npm run seal:cmake && npm run seal:make && npm run seal:build",
+    "seal:make": "bash scripts/seal-make.sh",
+    "start:js": "export NODE_ENV=development && export ENVIRONMENT=web && export TARGET=js && webpack-dev-server --host 0.0.0.0",
+    "start:wasm": "export NODE_ENV=development && export ENVIRONMENT=web && export TARGET=wasm && webpack-dev-server --host 0.0.0.0",
+    "submodule:update": "bash scripts/submodule-update.sh",
+    "test": "jest",
+    "test:unit": "jest ./src/test/unit"
+  },
+  "version": "4.3.10"
+}
