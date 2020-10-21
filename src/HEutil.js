@@ -1,16 +1,15 @@
 import { Seal } from 'node-seal/dist/allows_transparent/node/wasm';
 
-export const mod = '8088322049';
 
 async function createHEContext(){
     let Morfix = await Seal()
 
     const schemeType = Morfix.SchemeType.BFV
     const securityLevel = Morfix.SecurityLevel.tc128
-    const polyModulusDegree = 8192
-    //const bitSizes = [43,43,44,44,44]
-    //const bitSize = 33
-    const modulus = Morfix.Modulus(mod);
+    const polyModulusDegree = 4096
+    const bitSizes = [36,36,37]
+    const bitSize = 20
+
 
     const parms = Morfix.EncryptionParameters(schemeType)
 
@@ -19,13 +18,15 @@ async function createHEContext(){
 
     // Create a suitable set of CoeffModulus primes
     parms.setCoeffModulus(
-        Morfix.CoeffModulus.BFVDefault(polyModulusDegree)
+        Morfix.CoeffModulus.Create(polyModulusDegree, Int32Array.from(bitSizes))
     )
 
     // Set the PlainModulus to a prime of bitSize 20.
-    parms.setPlainModulus(modulus);
+    parms.setPlainModulus(
+        Morfix.PlainModulus.Batching(polyModulusDegree, bitSize)
+    )
 
-    let context = Morfix.Context(
+    const context = Morfix.Context(
         parms, // Encryption Parameters
         true, // ExpandModChain
         securityLevel // Enforce a security level

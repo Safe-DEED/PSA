@@ -1,12 +1,5 @@
 {
   "name": "apir-lib",
-  "jest": {
-    "verbose": true,
-    "moduleDirectories": ["node_modules", "src"],
-    "transform": {
-      "\\.js$": "<rootDir>/node_modules/babel-jest"
-    }
-  },
   "version": "1.0.0",
   "description": "a small apir library",
   "main": "index.js",
