@@ -1,7 +1,7 @@
 import APIR from '../src';
 
 describe('an apir lib', () => {
-    it('without networking', async () => {
+    it('without networking object', async () => {
         const clientContext = await APIR.getContextClient();
         const serverContext = await APIR.getServerContext();
         const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
@@ -37,7 +37,7 @@ describe('an apir lib', () => {
         expect(parseInt(result[0])).toBe(328350);
     }, 9000000);
 
-    it('with networking', async () => {
+    it('with networking object', async () => {
         const clientContext = await APIR.getContextClient();
         const serverContext = await APIR.getServerContext();
         const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
@@ -55,12 +55,13 @@ describe('an apir lib', () => {
 
         const clientRequest = APIR.encryptForClientRequest(array, clientContext);
 
-        const computationResult = APIR.computeWithClientRequestObject(clientRequest, matrix, serverContext);
+        const serverResponse = APIR.computeWithClientRequestObject(clientRequest, matrix, serverContext);
 
         // ------------------ TEST---------
+        const computationResult = JSON.parse(serverResponse);
         for (let i = 0; i < computationResult.length; ++i) {
             const cipherText = clientContext.morfix.CipherText();
-            cipherText.load(clientContext.context, out[i]);
+            cipherText.load(clientContext.context, computationResult[i]);
             const noiseBudget = clientContext.decryptor.invariantNoiseBudget(cipherText);
             console.log("noise budget: " + noiseBudget);
             if (noiseBudget <= 0){
@@ -69,7 +70,6 @@ describe('an apir lib', () => {
         }
         //------------------------
 
-        const serverResponse = APIR.getServerResponseObject(computationResult)
         const result = APIR.decryptServerResponseObject(serverResponse, clientContext);
         console.log(result);
         expect(parseInt(result[0])).toBe(328350);

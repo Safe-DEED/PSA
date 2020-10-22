@@ -1,6 +1,5 @@
 import { Seal } from 'node-seal/dist/allows_transparent/node/wasm';
 
-
 async function createHEContext(){
     let Morfix = await Seal()
 
@@ -9,7 +8,6 @@ async function createHEContext(){
     const polyModulusDegree = 4096
     const bitSizes = [36,36,37]
     const bitSize = 20
-
 
     const parms = Morfix.EncryptionParameters(schemeType)
 

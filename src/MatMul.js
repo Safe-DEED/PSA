@@ -8,10 +8,8 @@ export function bigMatMul(matrix, inputVec, params, HEcontext) {
     for (let col = 0; col < numberOfCols; ++col) {
         for (let row = 0; row < numberOfRows; ++row) {
             const subMat = getSubMatrix(matrix, row, col, params.N, params.k, slots);
-            //console.log("subMat: " + subMat);
             const result = babyStepGiantStepMatMul(inputVec[row], subMat, HEcontext, params.bsgsN1, params.bsgsN2);
 
-            //console.log("matMulresult: " + inputVec);
             const rotated = evaluator.rotateColumns(result, galoisKeys);
             evaluator.add(result, rotated, result);
             rotated.delete();
@@ -29,7 +27,7 @@ export function bigMatMul(matrix, inputVec, params, HEcontext) {
 function getSubMatrix(matrix, row, col, N, k, slotCount) {
     let slots = slotCount;
     let halfSlots = slots >>> 1;
-    //console.log("halfSlots: " + halfSlots);
+
     let out = [];
     for (let i = 0; i < slots; ++i) {
         let outRow = []
@@ -40,7 +38,6 @@ function getSubMatrix(matrix, row, col, N, k, slotCount) {
         }
         out.push(outRow);
     }
-    //console.log(out);
     return out;
 }
 
@@ -73,8 +70,6 @@ function rotateN(arr, n, toTheRight){
     return arr;
 }
 
-
-
 function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN2) { //big v*M
     let matrixDims = HEcontext.encoder.slotCount >>> 1;
     let matrix = [];
@@ -83,11 +78,6 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
     const context = HEcontext.context;
     const evaluator = HEcontext.evaluator;
     const galoisKeys = HEcontext.galois;
-
-    //console.log(HEcontext);
-    //const plainText = decryptor.decrypt(inputState);
-    //const arr = encoder.decode(plainText, false);
-    //console.log(arr);
 
     for (let i = 0; i < matrixDims; ++i) {
         let diag = [] //2*matrixDims
@@ -103,12 +93,8 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
         let l = Math.floor(i / bsgsN1);
 
         if (l) {
-            //const t2 = performance.now();
             rotateN(diag, (2*matrixDims) - l * bsgsN1);
             rotateN(tmp, matrixDims - l * bsgsN1);
-            //const t3 = performance.now();
-            //timingReport.rotateN = t3 - t2;
-            //console.log(`Call to rotateN took ${timingReport.rotateN} milliseconds.`);
         }
 
         tmp.forEach(elem => {
@@ -126,8 +112,6 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
     let rot = [] //size: bsgsN1
     rot[0] = inputState;
 
-    //debugger;
-
     for (let j = 1; j < bsgsN1; j++) {
         rot[j] = evaluator.rotateRows(rot[j - 1], 1, galoisKeys);
     }
@@ -136,12 +120,6 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
         evaluator.multiplyPlain(rot[0], matrix[l * bsgsN1], innerSum);
 
         for (let j = 1; j < bsgsN1; j++) {
-            /*const plainText = Morfix.PlainText();
-            decryptor.decrypt(matrix[l * bsgsN1 + j], plainText);
-            const root = encoder.decode(plainText, false);
-            console.log(root);*/
-            //const noise = decryptor.invariantNoiseBudget(rot[j]);
-            //console.log('Noise:', noise)
             let temp = evaluator.multiplyPlain(rot[j], matrix[l * bsgsN1 + j]);
 
             evaluator.add(innerSum, temp, innerSum);
@@ -161,9 +139,6 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
         rot[i].delete();
     }
 
-    //TODO:delete
-    //const noise = decryptor.invariantNoiseBudget(outerSum);
-    //console.log('Noise:', noise)
     innerSum.delete();
 
     return outerSum;

@@ -1,7 +1,7 @@
 {
   "name": "apir-lib",
   "version": "1.0.0",
-  "description": "a small apir library",
+  "description": "An apir library",
   "main": "index.js",
   "type": "module",
   "scripts": {

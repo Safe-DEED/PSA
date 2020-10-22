@@ -134,7 +134,8 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext){
 
 function computeWithClientRequestObject(clientRequestObject, matrix, serverContext){
     const clientRequestObjectParsed = JSON.parse(clientRequestObject);
-    return compute(clientRequestObjectParsed.arr, clientRequestObjectParsed.galois, matrix, serverContext);
+    const computationResult = compute(clientRequestObjectParsed.arr, clientRequestObjectParsed.galois, matrix, serverContext);
+    return getServerResponseObject(computationResult);
 
 }
 
@@ -158,7 +159,6 @@ const APIR = {
     compute: compute,
     computeWithClientRequestObject: computeWithClientRequestObject,
     getSerializedGaloisKeys: getSerializedGaloisKeys,
-    getServerResponseObject: getServerResponseObject,
 }
 
 module.exports = APIR;
