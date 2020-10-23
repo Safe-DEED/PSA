@@ -11,7 +11,12 @@
     "name": "Alexander Grass",
     "email": "alexanderwaltergrass@gmail.com"
   },
-  "license": "ISC",
+  "license": "MIT",
+  "homepage": "https://github.com/wigglepee/psa-lib",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/wigglepee/psa-lib"
+  },
   "dependencies": {},
   "devDependencies": {
     "@babel/preset-env": "^7.12.1",
