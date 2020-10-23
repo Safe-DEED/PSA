@@ -1,13 +1,16 @@
 {
-  "name": "apir-lib",
+  "name": "psa-lib",
   "version": "1.0.2",
-  "description": "An apir library",
-  "main": "index.js",
+  "description": "A library for private selective aggregation",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "test": "jest"
   },
-  "author": "Alexander Grass",
+  "author": {
+    "name" : "Alexander Grass",
+    "email" : "alexanderwaltergrass@gmail.com"
+  },
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {

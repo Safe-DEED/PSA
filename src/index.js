@@ -1,10 +1,19 @@
 import {createClientHEContext, createServerHEContext} from './HEutil';
 import {bigMatMul, getBsgsParams} from "./MatMul";
 
+
+/**
+ * This asynchronous function return the client context object.
+ * @returns {Object} a context object necessary for client side actions
+ */
 async function getClientContext(){
     return await createClientHEContext();
 }
 
+/**
+ * This asynchronous function return the server context object.
+ * @returns {Object} a context object necessary for client side actions
+ */
 async function getServerContext(){
     return await createServerHEContext();
 }
@@ -35,10 +44,16 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
 
 }
 
-//takes plain array, return array of base64 encoded ciphertexts to be transmitted to server
-function encrypt(inputArray, context){
-    const encoder = context.encoder;
-    const encryptor = context.encryptor;
+
+/**
+ * This function encrypts the client's input vector and returns an array of ciphertexts.
+ * @param {array<number>} inputArray 1D array of numbers
+ * @param {Object} clientContext client side context
+ * @returns {array<CipherText>} an array of ciphertexts
+ */
+function encrypt(inputArray, clientContext){
+    const encoder = clientContext.encoder;
+    const encryptor = clientContext.encryptor;
 
     let numInnerArrays = getNumberOfInnerArrays(inputArray.length, encoder.slotCount);
     const numberIndices = getSpecialFormatIndicesVector(numInnerArrays, encoder, inputArray);
@@ -56,6 +71,12 @@ function encrypt(inputArray, context){
 
 }
 
+/**
+ * This function encrypts the client's input vector and returns an object ready to be sent to the server.
+ * @param {array<number>} inputArray 1D array of numbers
+ * @param {Object} clientContext client side context
+ * @returns {string} JSON to be sent to server without further processing
+ */
 function encryptForClientRequest(inputArray, clientContext){
     const encryptedArray = encrypt(inputArray, clientContext);
     return getClientRequestObject(encryptedArray, clientContext);
@@ -71,6 +92,12 @@ function getRedundantPartsRemovedArray(arr, slotCount){
     return flatArray;
 }
 
+/**
+ * This function decrypts the computed result vector. The result will be in the first n cells, if the matrix was of dimension (m x n).
+ * @param {array<CipherText>} encryptedResult 1D array of ciphertexts received from server computation
+ * @param {Object} clientContext client side context
+ * @returns {array<number>} resulting array
+ */
 function decrypt(encryptedResult, clientContext){
     const Morfix = clientContext.morfix;
     const context = clientContext.context;
@@ -92,15 +119,35 @@ function decrypt(encryptedResult, clientContext){
     return getRedundantPartsRemovedArray(resultVec, encoder.slotCount);
 }
 
+/**
+ * This function decrypts the server response object. The result will be in the first n cells, if the matrix was of dimension (m x n).
+ * @param {string} serverResponseObject server response object (JSON), received from the server
+ * @param {Object} clientContext client side context
+ * @returns {array<number>} resulting array
+ */
 function decryptServerResponseObject(serverResponseObject, clientContext){
     const encryptedResult = JSON.parse(serverResponseObject);
     return decrypt(encryptedResult, clientContext);
 }
 
+/**
+ * This function returns the serialized galois key needed for rotations of the ciphertext.
+ * @param {Object} clientContext client side context
+ * @returns {string} base64 encoded galois key
+ */
 function getSerializedGaloisKeys(clientContext){
     return clientContext.galoisKeys.save();
 }
 
+/**
+ * This function computes the dot product between the encrypted client vector and the server matrix.
+ * Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
+ * @param {array<CipherText>} encryptedArray 1D array of ciphertexts received from client
+ * @param {string} serializedGaloisKeys base64 encoded galois key
+ * @param {array<number>} matrix a 2D array of Numbers.
+ * @param {Object} serverContext server side context
+ * @returns {array<CipherText>} an array of ciphertexts
+ */
 function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext){
     const Morfix = serverContext.morfix;
     const context = serverContext.context;
@@ -132,6 +179,14 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext){
     return convertedOutput;
 }
 
+/**
+ * This function computes the dot product between the encrypted client vector and the server matrix.
+ * Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
+ * @param {string} clientRequestObject client request object (JSON), received from client
+ * @param {array<number>} matrix a 2D array of Numbers.
+ * @param {Object} serverContext server side context
+ * @returns {string} JSON to be sent to client for decryption
+ */
 function computeWithClientRequestObject(clientRequestObject, matrix, serverContext){
     const clientRequestObjectParsed = JSON.parse(clientRequestObject);
     const computationResult = compute(clientRequestObjectParsed.arr, clientRequestObjectParsed.galois, matrix, serverContext);
@@ -145,12 +200,11 @@ function getClientRequestObject(encryptedArray, clientContext){
 }
 
 function getServerResponseObject(computationResult){
-    //for completeness and future changes
     return JSON.stringify(computationResult);
 }
 
-const APIR = {
-    getContextClient: getClientContext,
+export default  {
+    getClientContext: getClientContext,
     getServerContext: getServerContext,
     encrypt: encrypt,
     encryptForClientRequest: encryptForClientRequest,
@@ -160,5 +214,3 @@ const APIR = {
     computeWithClientRequestObject: computeWithClientRequestObject,
     getSerializedGaloisKeys: getSerializedGaloisKeys,
 }
-
-module.exports = APIR;

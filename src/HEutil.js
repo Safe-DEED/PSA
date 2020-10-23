@@ -1,4 +1,4 @@
-import { Seal } from 'node-seal/dist/allows_transparent/node/wasm';
+import { Seal } from './node-seal';
 
 async function createHEContext(){
     let Morfix = await Seal()
