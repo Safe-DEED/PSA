@@ -1,6 +1,6 @@
 {
   "name": "psa-lib",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A library for private selective aggregation",
   "main": "src/index.js",
   "type": "module",
@@ -14,8 +14,8 @@
   "license": "MIT",
   "homepage": "https://github.com/wigglepee/psa-lib",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/wigglepee/psa-lib"
+    "type": "git",
+    "url": "https://github.com/wigglepee/psa-lib"
   },
   "dependencies": {},
   "devDependencies": {
