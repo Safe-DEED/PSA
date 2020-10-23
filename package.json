@@ -12,10 +12,10 @@
     "email": "alexanderwaltergrass@gmail.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/wigglepee/psa-lib",
+  "homepage": "https://github.com/awgrass/psa-lib",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wigglepee/psa-lib"
+    "url": "https://github.com/awgrass/psa-lib"
   },
   "dependencies": {},
   "devDependencies": {
