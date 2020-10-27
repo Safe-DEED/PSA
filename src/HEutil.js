@@ -1,13 +1,28 @@
 import { Seal } from './node-seal';
 
-async function createHEContext(){
+async function createHEContext(polyModulusDegree, plainModulus){
     let Morfix = await Seal()
 
     const schemeType = Morfix.SchemeType.BFV
     const securityLevel = Morfix.SecurityLevel.tc128
-    const polyModulusDegree = 4096
-    const bitSizes = [36,36,37]
-    const bitSize = 20
+
+    let bitSizes;
+    switch(polyModulusDegree){
+        case 4096:
+            bitSizes = [36,36,37];
+            break;
+        case 8192:
+            bitSizes = [43,43,44,44,44];
+            break;
+        case 16384:
+            bitSizes = [48,48,48,49,49,49,49,49,49];
+            break;
+        default:
+            throw new Error('unknown polyModulusDegree ' + polyModulusDegree);
+            break;
+    }
+
+    const bitSize = plainModulus;
 
     const parms = Morfix.EncryptionParameters(schemeType)
 
@@ -39,9 +54,9 @@ async function createHEContext(){
     return [Morfix, context];
 }
 
-export async function createClientHEContext(){
+export async function createClientHEContext(polyModulusDegree, plainModulus){
 
-    const [Morfix, context] = await createHEContext();
+    const [Morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
 
     let encoder = Morfix.BatchEncoder(context);
     let keyGenerator = Morfix.KeyGenerator(context);
@@ -69,8 +84,8 @@ export async function createClientHEContext(){
 
 }
 
-export async function createServerHEContext(){
-    const [Morfix, context] = await createHEContext();
+export async function createServerHEContext(polyModulusDegree, plainModulus){
+    const [Morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
     let encoder = Morfix.BatchEncoder(context);
     let evaluator = Morfix.Evaluator(context);
     return {morfix: Morfix, context: context, encoder: encoder, evaluator: evaluator};

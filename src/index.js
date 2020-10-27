@@ -4,18 +4,22 @@ import {bigMatMul, getBsgsParams} from "./MatMul";
 
 /**
  * This asynchronous function return the client context object.
+ * @param {number} polyModulusDegree the polymodulus degree
+ * @param {number} plainModulus the plaintext modulus
  * @returns {Object} a context object necessary for client side actions
  */
-async function getClientContext(){
-    return await createClientHEContext();
+async function getClientContext(polyModulusDegree, plainModulus){
+    return await createClientHEContext(polyModulusDegree, plainModulus);
 }
 
 /**
  * This asynchronous function return the server context object.
+ *  @param {number} polyModulusDegree the polymodulus degree
+ * @param {number} plainModulus the plaintext modulus
  * @returns {Object} a context object necessary for client side actions
  */
-async function getServerContext(){
-    return await createServerHEContext();
+async function getServerContext(polyModulusDegree, plainModulus){
+    return await createServerHEContext(polyModulusDegree, plainModulus);
 }
 
 function getZeroFilledBigUint64Array(length) {
@@ -109,6 +113,12 @@ function decrypt(encryptedResult, clientContext){
         const cipherText = Morfix.CipherText();
         cipherText.load(context, item);
         const plainText = Morfix.PlainText();
+
+        const noiseBudget = decryptor.invariantNoiseBudget(cipherText);
+        if (noiseBudget <= 0){
+            throw new Error('noise budget consumed: ' + noiseBudget);
+        }
+
         decryptor.decrypt(cipherText, plainText);
         resultVec.push(encoder.decodeBigInt(plainText, false))
 
