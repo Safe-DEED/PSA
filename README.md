@@ -5,7 +5,7 @@ This javascript library was developed for building arbitrary PSA applications.
 ### Installation instructions
 
 To install the lib one just needs to execute `$ npm install psa-lib` in the project root.
-  
+
 ### Usage
 
 When retrieving the context with either getClientContext or getServerContext, one must provide the polymodulus degree 
@@ -49,7 +49,7 @@ plaintext modulus. If the noise budget gets consumed, try using the next higher 
 
 #### getClientContext
 
-[src/index.js:11-13](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L11-L13 "Source code on GitHub")
+[src/index.js:11-13](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L11-L13 "Source code on GitHub")
 
 This asynchronous function return the client context object.
 
@@ -62,7 +62,7 @@ Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### getServerContext
 
-[src/index.js:21-23](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L21-L23 "Source code on GitHub")
+[src/index.js:21-23](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L21-L23 "Source code on GitHub")
 
 This asynchronous function return the server context object.
 
@@ -75,7 +75,7 @@ Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### encrypt
 
-[src/index.js:58-76](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L58-L76 "Source code on GitHub")
+[src/index.js:58-76](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L58-L76 "Source code on GitHub")
 
 This function encrypts the client's input vector and returns an array of ciphertexts.
 
@@ -88,7 +88,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### encryptForClientRequest
 
-[src/index.js:84-87](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L84-L87 "Source code on GitHub")
+[src/index.js:84-87](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L84-L87 "Source code on GitHub")
 
 This function encrypts the client's input vector and returns an object ready to be sent to the server.
 
@@ -101,7 +101,7 @@ Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### decrypt
 
-[src/index.js:105-130](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L105-L130 "Source code on GitHub")
+[src/index.js:105-130](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L105-L130 "Source code on GitHub")
 
 This function decrypts the computed result vector. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
@@ -114,7 +114,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### decryptServerResponseObject
 
-[src/index.js:138-141](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L138-L141 "Source code on GitHub")
+[src/index.js:138-141](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L138-L141 "Source code on GitHub")
 
 This function decrypts the server response object. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
@@ -127,7 +127,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### getSerializedGaloisKeys
 
-[src/index.js:148-150](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L148-L150 "Source code on GitHub")
+[src/index.js:148-150](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L148-L150 "Source code on GitHub")
 
 This function returns the serialized galois key needed for rotations of the ciphertext.
 
@@ -139,7 +139,7 @@ Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### compute
 
-[src/index.js:161-190](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L161-L190 "Source code on GitHub")
+[src/index.js:161-190](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L161-L190 "Source code on GitHub")
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
@@ -155,7 +155,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### computeWithClientRequestObject
 
-[src/index.js:200-205](https://github.com/awgrass/psa-lib/blob/f65615756c3f5c005d0008fac60fdc2563c719d0/src/index.js#L200-L205 "Source code on GitHub")
+[src/index.js:200-205](https://github.com/awgrass/psa-lib/blob/60efcc97e634c97dfb1a5af22dc27aa52ea850f4/src/index.js#L200-L205 "Source code on GitHub")
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
