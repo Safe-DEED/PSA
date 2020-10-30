@@ -12,10 +12,10 @@
     "email": "alexanderwaltergrass@gmail.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/awgrass/psa-lib",
+  "homepage": "https://github.com/Safe-DEED/PSA",
   "repository": {
     "type": "git",
-    "url": "https://github.com/awgrass/psa-lib"
+    "url": "https://github.com/Safe-DEED/PSA"
   },
   "dependencies": {},
   "devDependencies": {
