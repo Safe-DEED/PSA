@@ -1,3 +1,5 @@
+![Safe-DEED Logo](https://github.com/Safe-DEED/PSA/blob/master/Safe-DEED_logo.png)
+
 # PSA-lib
 
 This javascript library was developed for building arbitrary PSA applications. 
@@ -167,3 +169,7 @@ Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n
 -   `serverContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** server side context
 
 Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON to be sent to client for decryption
+
+## Acknowledgements
+
+This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825225.
