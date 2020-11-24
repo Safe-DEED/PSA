@@ -1,5 +1,5 @@
-import {createClientHEContext, createServerHEContext} from './HEutil';
-import {bigMatMul, getBsgsParams} from "./MatMul";
+import {createClientHEContext, createServerHEContext} from './HEutil.js';
+import {bigMatMul, getBsgsParams} from "./MatMul.js";
 
 
 /**

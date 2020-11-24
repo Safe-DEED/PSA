@@ -1,0 +1,55 @@
+import { LoaderOptions, Instance } from './seal';
+import { Exception } from './exception';
+import { CipherText, CipherTextConstructorOptions } from './cipher-text';
+import { Context } from './context';
+import { PlainText, PlainTextConstructorOptions } from './plain-text';
+import { MemoryPoolHandle } from './memory-pool-handle';
+import { RelinKeys } from './relin-keys';
+import { ParmsIdType } from './parms-id-type';
+import { GaloisKeys } from './galois-keys';
+import { SchemeType } from './scheme-type';
+export declare type EvaluatorDependencyOptions = {
+    readonly Exception: Exception;
+    readonly MemoryPoolHandle: MemoryPoolHandle;
+    readonly CipherText: CipherTextConstructorOptions;
+    readonly PlainText: PlainTextConstructorOptions;
+};
+export declare type EvaluatorDependencies = {
+    ({ Exception, MemoryPoolHandle, CipherText, PlainText }: EvaluatorDependencyOptions): EvaluatorConstructorOptions;
+};
+export declare type EvaluatorConstructorOptions = {
+    (context: Context): Evaluator;
+};
+export declare type Evaluator = {
+    readonly instance: Instance;
+    readonly unsafeInject: (instance: Instance) => void;
+    readonly delete: () => void;
+    readonly negate: (encrypted: CipherText, destination?: CipherText) => CipherText | void;
+    readonly add: (a: CipherText, b: CipherText, destination?: CipherText) => CipherText | void;
+    readonly sub: (a: CipherText, b: CipherText, destination?: CipherText) => CipherText | void;
+    readonly multiply: (a: CipherText, b: CipherText, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly square: (encrypted: CipherText, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly relinearize: (encrypted: CipherText, relinKeys: RelinKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly cipherModSwitchToNext: (encrypted: CipherText, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly cipherModSwitchTo: (encrypted: CipherText, parmsId: ParmsIdType, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly plainModSwitchToNext: (plain: PlainText, destination?: PlainText) => PlainText | void;
+    readonly plainModSwitchTo: (plain: PlainText, parmsId: ParmsIdType, destination?: PlainText) => PlainText | void;
+    readonly rescaleToNext: (encrypted: CipherText, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly rescaleTo: (encrypted: CipherText, parmsId: ParmsIdType, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly exponentiate: (encrypted: CipherText, exponent: number, relinKeys: RelinKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly addPlain: (encrypted: CipherText, plain: PlainText, destination?: CipherText) => CipherText | void;
+    readonly subPlain: (encrypted: CipherText, plain: PlainText, destination?: CipherText) => CipherText | void;
+    readonly multiplyPlain: (encrypted: CipherText, plain: PlainText, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly plainTransformToNtt: (plain: PlainText, parmsId: ParmsIdType, destinationNtt?: PlainText, pool?: MemoryPoolHandle) => PlainText | void;
+    readonly cipherTransformToNtt: (encrypted: CipherText, destinationNtt?: CipherText) => CipherText | void;
+    readonly cipherTransformFromNtt: (encryptedNtt: CipherText, destination?: CipherText) => CipherText | void;
+    readonly applyGalois: (encrypted: CipherText, galoisElt: number, galoisKeys: GaloisKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly rotateRows: (encrypted: CipherText, steps: number, galoisKeys: GaloisKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly rotateColumns: (encrypted: CipherText, galoisKeys: GaloisKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly rotateVector: (encrypted: CipherText, steps: number, galoisKeys: GaloisKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly complexConjugate: (encrypted: CipherText, galoisKeys: GaloisKeys, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly sumElements: (encrypted: CipherText, galoisKeys: GaloisKeys, scheme: SchemeType, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly dotProduct: (a: CipherText, b: CipherText, relinKeys: RelinKeys, galoisKeys: GaloisKeys, scheme: SchemeType, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+    readonly dotProductPlain: (a: CipherText, b: PlainText, galoisKeys: GaloisKeys, scheme: SchemeType, destination?: CipherText, pool?: MemoryPoolHandle) => CipherText | void;
+};
+export declare const EvaluatorInit: ({ loader }: LoaderOptions) => EvaluatorDependencies;

@@ -17,7 +17,8 @@
     "type": "git",
     "url": "https://github.com/Safe-DEED/PSA"
   },
-  "dependencies": {},
+  "dependencies": {
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.12.1",
     "babel-jest": "^26.6.0",

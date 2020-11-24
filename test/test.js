@@ -1,11 +1,11 @@
-import APIR from '../src';
+import PSA from '../src';
 
-describe('an apir lib', () => {
+describe('an psa lib', () => {
     it('without networking object', async () => {
         let polyModulusDegree = 4096;
         let plainModulus = 20;
-        const clientContext = await APIR.getClientContext(polyModulusDegree, plainModulus);
-        const serverContext = await APIR.getServerContext(polyModulusDegree, plainModulus);
+        const clientContext = await PSA.getClientContext(polyModulusDegree, plainModulus);
+        const serverContext = await PSA.getServerContext(polyModulusDegree, plainModulus);
         const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
             27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
             54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
@@ -19,9 +19,9 @@ describe('an apir lib', () => {
             [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
 
-        const encryptedArray = APIR.encrypt(array, clientContext);
-        const serializedGaloisKeys = APIR.getSerializedGaloisKeys(clientContext);
-        const out = APIR.compute(encryptedArray, serializedGaloisKeys, matrix, serverContext);
+        const encryptedArray = PSA.encrypt(array, clientContext);
+        const serializedGaloisKeys = PSA.getSerializedGaloisKeys(clientContext);
+        const out = PSA.compute(encryptedArray, serializedGaloisKeys, matrix, serverContext);
 
         // ------------------ TEST---------
         for (let i = 0; i < out.length; ++i) {
@@ -34,7 +34,7 @@ describe('an apir lib', () => {
             }
         }
         //------------------------
-        const result = APIR.decrypt(out, clientContext);
+        const result = PSA.decrypt(out, clientContext);
         console.log(result);
         expect(parseInt(result[0])).toBe(328350);
     }, 9000000);
@@ -42,8 +42,8 @@ describe('an apir lib', () => {
     it('with networking object', async () => {
         let polyModulusDegree = 4096;
         let plainModulus = 20;
-        const clientContext = await APIR.getClientContext(polyModulusDegree, plainModulus);
-        const serverContext = await APIR.getServerContext(polyModulusDegree, plainModulus);
+        const clientContext = await PSA.getClientContext(polyModulusDegree, plainModulus);
+        const serverContext = await PSA.getServerContext(polyModulusDegree, plainModulus);
         const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
             27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
             54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
@@ -57,9 +57,9 @@ describe('an apir lib', () => {
             [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
 
-        const clientRequest = APIR.encryptForClientRequest(array, clientContext);
+        const clientRequest = PSA.encryptForClientRequest(array, clientContext);
 
-        const serverResponse = APIR.computeWithClientRequestObject(clientRequest, matrix, serverContext);
+        const serverResponse = PSA.computeWithClientRequestObject(clientRequest, matrix, serverContext);
 
         // ------------------ TEST---------
         const computationResult = JSON.parse(serverResponse);
@@ -74,7 +74,7 @@ describe('an apir lib', () => {
         }
         //------------------------
 
-        const result = APIR.decryptServerResponseObject(serverResponse, clientContext);
+        const result = PSA.decryptServerResponseObject(serverResponse, clientContext);
         console.log(result);
         expect(parseInt(result[0])).toBe(328350);
     }, 9000000);
