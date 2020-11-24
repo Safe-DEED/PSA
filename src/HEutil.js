@@ -1,7 +1,7 @@
-import Seal from 'node-seal';
+import SEAL from './node-seal';
 
 async function createHEContext(polyModulusDegree, plainModulus){
-    let Morfix = await Seal()
+    let Morfix = await SEAL()
 
     const schemeType = Morfix.SchemeType.BFV
     const securityLevel = Morfix.SecurityLevel.tc128
