@@ -241,3 +241,4 @@ var _default = {
   getSerializedGaloisKeys: getSerializedGaloisKeys
 };
 exports.default = _default;
+module.exports = exports.default;

@@ -213,7 +213,7 @@ function getServerResponseObject(computationResult){
     return JSON.stringify(computationResult);
 }
 
-export default  {
+export default {
     getClientContext: getClientContext,
     getServerContext: getServerContext,
     encrypt: encrypt,

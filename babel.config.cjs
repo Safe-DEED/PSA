@@ -1,5 +1,5 @@
 module.exports = {
-    "plugins": ["@babel/plugin-transform-modules-commonjs"],
+    "plugins": ["@babel/plugin-transform-modules-commonjs", "add-module-exports"],
     "presets": [
       [
           '@babel/preset-env',
