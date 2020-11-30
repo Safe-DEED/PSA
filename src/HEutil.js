@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.createClientHEContext = createClientHEContext;
 exports.createServerHEContext = createServerHEContext;
 
-var _nodeSeal = _interopRequireDefault(require("node-seal"));
+var _nodeSeal = _interopRequireDefault(require("./node-seal"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
