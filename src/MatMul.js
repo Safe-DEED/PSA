@@ -85,15 +85,16 @@ function rotateN(arr, n, toTheRight) {
   return arr;
 }
 
-function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN2) {
+function babyStepGiantStepMatMul(inputState, subMatrix, {
+  morfix,
+  encoder,
+  context,
+  evaluator,
+  galois: galoisKeys
+}, bsgsN1, bsgsN2) {
   //big v*M
-  const matrixDims = HEcontext.encoder.slotCount >>> 1;
+  const matrixDims = encoder.slotCount >>> 1;
   const matrix = [];
-  const Morfix = HEcontext.morfix;
-  const encoder = HEcontext.encoder;
-  const context = HEcontext.context;
-  const evaluator = HEcontext.evaluator;
-  const galoisKeys = HEcontext.galois;
 
   for (let i = 0; i < matrixDims; ++i) {
     const diag = []; //2*matrixDims
@@ -121,16 +122,18 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
     matrix.push(row);
   }
 
-  const outerSum = Morfix.CipherText({
+  const outerSum = morfix.CipherText({
     context
   });
-  const innerSum = Morfix.CipherText({
+  const innerSum = morfix.CipherText({
     context
   }); // prepare rotations
 
   const rot = []; //size: bsgsN1
+  // Instead of passing by reference, which would refer to the same wasm instance,
+  // we clone the inputState to not mutate the original state.
 
-  rot[0] = inputState;
+  rot[0] = inputState.clone();
 
   for (let j = 1; j < bsgsN1; j++) {
     rot[j] = evaluator.rotateRows(rot[j - 1], 1, galoisKeys);
@@ -150,12 +153,12 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
       evaluator.rotateRows(innerSum, tmp, galoisKeys, innerSum);
       evaluator.add(outerSum, innerSum, outerSum);
     }
-  }
+  } // Since we only return outerSum, we can clean up
+  // the other WASM instances
 
-  for (let i = 1; i < bsgsN1; ++i) {
-    rot[i].delete();
-  }
 
+  rot.forEach(x => x.delete());
+  matrix.forEach(x => x.delete());
   innerSum.delete();
   return outerSum;
 }

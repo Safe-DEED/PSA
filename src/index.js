@@ -116,16 +116,17 @@ function getRedundantPartsRemovedArray(arr, slotCount) {
  */
 
 
-function decrypt(encryptedResult, clientContext) {
-  const Morfix = clientContext.morfix;
-  const context = clientContext.context;
-  const decryptor = clientContext.decryptor;
-  const encoder = clientContext.encoder;
+function decrypt(encryptedResult, {
+  morfix,
+  context,
+  decryptor,
+  encoder
+}) {
   const resultVec = [];
-  encryptedResult.forEach(item => {
-    const cipherText = Morfix.CipherText();
-    cipherText.load(context, item);
-    const plainText = Morfix.PlainText();
+  encryptedResult.forEach(encRes => {
+    const cipherText = morfix.CipherText();
+    cipherText.load(context, encRes);
+    const plainText = morfix.PlainText();
     const noiseBudget = decryptor.invariantNoiseBudget(cipherText);
 
     if (noiseBudget <= 0) {
@@ -173,15 +174,16 @@ function getSerializedGaloisKeys(clientContext) {
 
 
 function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
-  const Morfix = serverContext.morfix;
-  const context = serverContext.context;
-  const encoder = serverContext.encoder;
-  const encryptedInputArray = encryptedArray;
-  const galoisKeys = Morfix.GaloisKeys();
+  const {
+    morfix,
+    context,
+    encoder
+  } = serverContext;
+  const galoisKeys = morfix.GaloisKeys();
   galoisKeys.load(context, serializedGaloisKeys);
   serverContext.galois = galoisKeys;
-  const input = encryptedInputArray.map(inpt => {
-    const cipherText = Morfix.CipherText();
+  const input = encryptedArray.map(inpt => {
+    const cipherText = morfix.CipherText();
     cipherText.load(context, inpt);
     return cipherText;
   });
@@ -213,10 +215,10 @@ function computeWithClientRequestObject(clientRequestObject, matrix, serverConte
 }
 
 function getClientRequestObject(encryptedArray, clientContext) {
-  let galois = clientContext.galoisKeys.save();
+  const galois = clientContext.galoisKeys.save();
   return JSON.stringify({
     arr: encryptedArray,
-    galois: galois
+    galois
   });
 }
 
