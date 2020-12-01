@@ -29,7 +29,7 @@ function getSpecialFormatIndicesVector(numInnerArrays, encoder, vec) {
   const numberIndices = []
   for (let i = 0; i < numInnerArrays; ++i) {
     const inner_array = getZeroFilledBigUint64Array(encoder.slotCount)
-    let currentOffset = i * encoder.slotCount
+    const currentOffset = i * encoder.slotCount
     for (let innerI = 0; innerI < encoder.slotCount; ++innerI) {
       if (currentOffset + innerI < vec.length) {
         inner_array[innerI] = BigInt(vec[currentOffset + innerI])
