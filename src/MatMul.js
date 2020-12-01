@@ -10,7 +10,7 @@ exports.getMatElement = getMatElement;
 function bigMatMul(matrix, inputVec, params, HEcontext) {
   const evaluator = HEcontext.evaluator;
   const galoisKeys = HEcontext.galois;
-  let out = [];
+  const out = [];
   const slots = HEcontext.encoder.slotCount;
   const numberOfRows = Math.ceil(params.N / slots);
   const numberOfCols = Math.ceil(2 * params.k / slots);
@@ -36,16 +36,16 @@ function bigMatMul(matrix, inputVec, params, HEcontext) {
 
 
 function getSubMatrix(matrix, row, col, N, k, slotCount) {
-  let slots = slotCount;
-  let halfSlots = slots >>> 1;
-  let out = [];
+  const slots = slotCount;
+  const halfSlots = slots >>> 1;
+  const out = [];
 
   for (let i = 0; i < slots; ++i) {
-    let outRow = [];
+    const outRow = [];
 
     for (let j = 0; j < halfSlots; ++j) {
-      let rowIndex = row * slots + i;
-      let colIndex = col * halfSlots + j;
+      const rowIndex = row * slots + i;
+      const colIndex = col * halfSlots + j;
       outRow.push(getMatElement(matrix, rowIndex, colIndex, N, k));
     }
 
@@ -65,8 +65,8 @@ function getBsgsParams(slotCount) {
   }
 
   const deg2 = deg - deg1;
-  let bsgsN1 = 1 << deg1;
-  let bsgsN2 = 1 << deg2;
+  const bsgsN1 = 1 << deg1;
+  const bsgsN2 = 1 << deg2;
   console.assert(slots >> 1 === bsgsN1 * bsgsN2);
   return [bsgsN1, bsgsN2];
 }
@@ -87,8 +87,8 @@ function rotateN(arr, n, toTheRight) {
 
 function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN2) {
   //big v*M
-  let matrixDims = HEcontext.encoder.slotCount >>> 1;
-  let matrix = [];
+  const matrixDims = HEcontext.encoder.slotCount >>> 1;
+  const matrix = [];
   const Morfix = HEcontext.morfix;
   const encoder = HEcontext.encoder;
   const context = HEcontext.context;
@@ -96,9 +96,9 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
   const galoisKeys = HEcontext.galois;
 
   for (let i = 0; i < matrixDims; ++i) {
-    let diag = []; //2*matrixDims
+    const diag = []; //2*matrixDims
 
-    let tmp = []; //matrixDims
+    const tmp = []; //matrixDims
 
     for (let j = 0; j < matrixDims; ++j) {
       const val_diag = subMatrix[(i + j) % matrixDims][j];
@@ -107,7 +107,7 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
       tmp.push(BigInt(val_tmp !== null ? val_tmp : 0));
     }
 
-    let l = Math.floor(i / bsgsN1);
+    const l = Math.floor(i / bsgsN1);
 
     if (l) {
       rotateN(diag, 2 * matrixDims - l * bsgsN1);
@@ -117,18 +117,18 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
     tmp.forEach(elem => {
       diag.push(elem);
     });
-    let row = encoder.encode(BigUint64Array.from(diag));
+    const row = encoder.encode(BigUint64Array.from(diag));
     matrix.push(row);
   }
 
-  let outerSum = Morfix.CipherText({
+  const outerSum = Morfix.CipherText({
     context
   });
-  let innerSum = Morfix.CipherText({
+  const innerSum = Morfix.CipherText({
     context
   }); // prepare rotations
 
-  let rot = []; //size: bsgsN1
+  const rot = []; //size: bsgsN1
 
   rot[0] = inputState;
 
@@ -140,13 +140,13 @@ function babyStepGiantStepMatMul(inputState, subMatrix, HEcontext, bsgsN1, bsgsN
     evaluator.multiplyPlain(rot[0], matrix[l * bsgsN1], innerSum);
 
     for (let j = 1; j < bsgsN1; j++) {
-      let temp = evaluator.multiplyPlain(rot[j], matrix[l * bsgsN1 + j]);
+      const temp = evaluator.multiplyPlain(rot[j], matrix[l * bsgsN1 + j]);
       evaluator.add(innerSum, temp, innerSum);
       temp.delete();
     }
 
     if (!l) outerSum.copy(innerSum);else {
-      let tmp = l * bsgsN1;
+      const tmp = l * bsgsN1;
       evaluator.rotateRows(innerSum, tmp, galoisKeys, innerSum);
       evaluator.add(outerSum, innerSum, outerSum);
     }

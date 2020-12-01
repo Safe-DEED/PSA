@@ -6,13 +6,16 @@ Object.defineProperty(exports, "__esModule", {
 exports.createClientHEContext = createClientHEContext;
 exports.createServerHEContext = createServerHEContext;
 
-var _nodeSeal = _interopRequireDefault(require("./node-seal"));
+var _allows_wasm_node_umd = _interopRequireDefault(require("node-seal/allows_wasm_node_umd"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 async function createHEContext(polyModulusDegree, plainModulus) {
-  let Morfix = await (0, _nodeSeal.default)();
-  const schemeType = Morfix.SchemeType.BFV;
+  // TODO: If it is possible for the application to create multiple client/server contexts,
+  // we should move this out into a global singleton as it will trigger a warning
+  // related to too many listeners (how WASM signals it is initialized internally).
+  const Morfix = await (0, _allows_wasm_node_umd.default)();
+  const schemeType = Morfix.SchemeType.bfv;
   const securityLevel = Morfix.SecurityLevel.tc128;
   let bitSizes;
 
@@ -31,7 +34,6 @@ async function createHEContext(polyModulusDegree, plainModulus) {
 
     default:
       throw new Error('unknown polyModulusDegree ' + polyModulusDegree);
-      break;
   }
 
   const bitSize = plainModulus;
@@ -55,37 +57,37 @@ async function createHEContext(polyModulusDegree, plainModulus) {
 }
 
 async function createClientHEContext(polyModulusDegree, plainModulus) {
-  const [Morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
-  let encoder = Morfix.BatchEncoder(context);
-  let keyGenerator = Morfix.KeyGenerator(context);
-  let publicKey = keyGenerator.publicKey();
-  let secretKey = keyGenerator.secretKey();
-  let galoisKeys = keyGenerator.galoisKeys();
-  let encryptor = Morfix.Encryptor(context, publicKey);
-  let decryptor = Morfix.Decryptor(context, secretKey);
-  let evaluator = Morfix.Evaluator(context);
+  const [morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
+  const encoder = morfix.BatchEncoder(context);
+  const keyGenerator = morfix.KeyGenerator(context);
+  const publicKey = keyGenerator.createPublicKey();
+  const secretKey = keyGenerator.secretKey();
+  const galoisKeys = keyGenerator.createGaloisKeys();
+  const encryptor = morfix.Encryptor(context, publicKey);
+  const decryptor = morfix.Decryptor(context, secretKey);
+  const evaluator = morfix.Evaluator(context);
   return {
-    morfix: Morfix,
-    context: context,
-    encoder: encoder,
-    keyGenerator: keyGenerator,
-    publicKey: publicKey,
-    secretKey: secretKey,
-    galoisKeys: galoisKeys,
-    encryptor: encryptor,
-    decryptor: decryptor,
-    evaluator: evaluator
+    morfix,
+    context,
+    encoder,
+    keyGenerator,
+    publicKey,
+    secretKey,
+    galoisKeys,
+    encryptor,
+    decryptor,
+    evaluator
   };
 }
 
 async function createServerHEContext(polyModulusDegree, plainModulus) {
-  const [Morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
-  let encoder = Morfix.BatchEncoder(context);
-  let evaluator = Morfix.Evaluator(context);
+  const [morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
+  const encoder = morfix.BatchEncoder(context);
+  const evaluator = morfix.Evaluator(context);
   return {
-    morfix: Morfix,
-    context: context,
-    encoder: encoder,
-    evaluator: evaluator
+    morfix,
+    context,
+    encoder,
+    evaluator
   };
 }
