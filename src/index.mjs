@@ -1,6 +1,5 @@
-import {createClientHEContext, createServerHEContext} from './HEutil';
-import {bigMatMul, getBsgsParams} from "./MatMul";
-
+import { createClientHEContext, createServerHEContext } from './HEutil'
+import { bigMatMul, getBsgsParams } from './MatMul'
 
 /**
  * This asynchronous function return the client context object.
@@ -8,8 +7,8 @@ import {bigMatMul, getBsgsParams} from "./MatMul";
  * @param {number} plainModulus the plaintext modulus
  * @returns {Object} a context object necessary for client side actions
  */
-async function getClientContext(polyModulusDegree, plainModulus){
-    return await createClientHEContext(polyModulusDegree, plainModulus);
+async function getClientContext(polyModulusDegree, plainModulus) {
+  return await createClientHEContext(polyModulusDegree, plainModulus)
 }
 
 /**
@@ -18,36 +17,34 @@ async function getClientContext(polyModulusDegree, plainModulus){
  * @param {number} plainModulus the plaintext modulus
  * @returns {Object} a context object necessary for client side actions
  */
-async function getServerContext(polyModulusDegree, plainModulus){
-    return await createServerHEContext(polyModulusDegree, plainModulus);
+async function getServerContext(polyModulusDegree, plainModulus) {
+  return await createServerHEContext(polyModulusDegree, plainModulus)
 }
 
 function getZeroFilledBigUint64Array(length) {
-    return new BigUint64Array(length).fill(BigInt(0));
+  return new BigUint64Array(length).fill(BigInt(0))
 }
 
 function getSpecialFormatIndicesVector(numInnerArrays, encoder, vec) {
-    let numberIndices = [];
-    for (let i = 0; i < numInnerArrays; ++i) {
-        let inner_array = getZeroFilledBigUint64Array(encoder.slotCount);
-        let currentOffset = i * encoder.slotCount;
-        for (let innerI = 0; innerI < encoder.slotCount; ++innerI) {
-            if ((currentOffset + innerI) < vec.length) {
-                inner_array[innerI] = BigInt(vec[currentOffset + innerI]);
-            } else {
-                break;
-            }
-        }
-        numberIndices.push(inner_array);
+  const numberIndices = []
+  for (let i = 0; i < numInnerArrays; ++i) {
+    const inner_array = getZeroFilledBigUint64Array(encoder.slotCount)
+    const currentOffset = i * encoder.slotCount
+    for (let innerI = 0; innerI < encoder.slotCount; ++innerI) {
+      if (currentOffset + innerI < vec.length) {
+        inner_array[innerI] = BigInt(vec[currentOffset + innerI])
+      } else {
+        break
+      }
     }
-    return numberIndices;
+    numberIndices.push(inner_array)
+  }
+  return numberIndices
 }
 
 function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
-    return Math.ceil(numberOfIdentities / slotCount);
-
+  return Math.ceil(numberOfIdentities / slotCount)
 }
-
 
 /**
  * This function encrypts the client's input vector and returns an array of ciphertexts.
@@ -55,24 +52,31 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
  * @param {Object} clientContext client side context
  * @returns {array<CipherText>} an array of ciphertexts
  */
-function encrypt(inputArray, clientContext){
-    const encoder = clientContext.encoder;
-    const encryptor = clientContext.encryptor;
+function encrypt(inputArray, clientContext) {
+  const encoder = clientContext.encoder
+  const encryptor = clientContext.encryptor
 
-    let numInnerArrays = getNumberOfInnerArrays(inputArray.length, encoder.slotCount);
-    const numberIndices = getSpecialFormatIndicesVector(numInnerArrays, encoder, inputArray);
+  const numInnerArrays = getNumberOfInnerArrays(
+    inputArray.length,
+    encoder.slotCount
+  )
+  const numberIndices = getSpecialFormatIndicesVector(
+    numInnerArrays,
+    encoder,
+    inputArray
+  )
 
-    let ciphs = [];
+  const ciphs = []
+  for (let i = 0; i < numInnerArrays; ++i) {
+    const plainText = encoder.encode(numberIndices[i])
+    const cipherText = encryptor.encrypt(plainText)
+    const cipherTextBase64 = cipherText.save()
+    ciphs.push(cipherTextBase64)
+    plainText.delete()
+    cipherText.delete()
+  }
 
-    for (let i = 0; i < numInnerArrays; ++i){
-        const plainText = encoder.encode(numberIndices[i]);
-        const cipherText = encryptor.encrypt(plainText);
-        const cipherTextBase64 = cipherText.save();
-        ciphs.push(cipherTextBase64);
-    }
-
-    return ciphs;
-
+  return ciphs
 }
 
 /**
@@ -81,19 +85,19 @@ function encrypt(inputArray, clientContext){
  * @param {Object} clientContext client side context
  * @returns {string} JSON to be sent to server without further processing
  */
-function encryptForClientRequest(inputArray, clientContext){
-    const encryptedArray = encrypt(inputArray, clientContext);
-    return getClientRequestObject(encryptedArray, clientContext);
+function encryptForClientRequest(inputArray, clientContext) {
+  const encryptedArray = encrypt(inputArray, clientContext)
+  return getClientRequestObject(encryptedArray, clientContext)
 }
 
-function getRedundantPartsRemovedArray(arr, slotCount){
-    let flatArray = [];
-    for (let i=0; i<arr.length; ++i){
-        for (let j=0; j < slotCount/2; ++j){
-            flatArray.push(arr[i][j]);
-        }
+function getRedundantPartsRemovedArray(arr, slotCount) {
+  const flatArray = []
+  for (let i = 0; i < arr.length; ++i) {
+    for (let j = 0; j < slotCount / 2; ++j) {
+      flatArray.push(arr[i][j])
     }
-    return flatArray;
+  }
+  return flatArray
 }
 
 /**
@@ -102,31 +106,26 @@ function getRedundantPartsRemovedArray(arr, slotCount){
  * @param {Object} clientContext client side context
  * @returns {array<number>} resulting array
  */
-function decrypt(encryptedResult, clientContext){
-    const Morfix = clientContext.morfix;
-    const context = clientContext.context;
-    const decryptor = clientContext.decryptor;
-    const encoder = clientContext.encoder;
+function decrypt(encryptedResult, { morfix, context, decryptor, encoder }) {
+  const resultVec = []
+  encryptedResult.forEach(encRes => {
+    const cipherText = morfix.CipherText()
+    cipherText.load(context, encRes)
+    const plainText = morfix.PlainText()
 
-    let resultVec = []
-    encryptedResult.forEach(item => {
-        const cipherText = Morfix.CipherText();
-        cipherText.load(context, item);
-        const plainText = Morfix.PlainText();
+    const noiseBudget = decryptor.invariantNoiseBudget(cipherText)
+    if (noiseBudget <= 0) {
+      throw new Error('noise budget consumed: ' + noiseBudget)
+    }
 
-        const noiseBudget = decryptor.invariantNoiseBudget(cipherText);
-        if (noiseBudget <= 0){
-            throw new Error('noise budget consumed: ' + noiseBudget);
-        }
+    decryptor.decrypt(cipherText, plainText)
+    resultVec.push(encoder.decodeBigInt(plainText, false))
 
-        decryptor.decrypt(cipherText, plainText);
-        resultVec.push(encoder.decodeBigInt(plainText, false))
+    cipherText.delete()
+    plainText.delete()
+  })
 
-        cipherText.delete();
-        plainText.delete();
-    });
-
-    return getRedundantPartsRemovedArray(resultVec, encoder.slotCount);
+  return getRedundantPartsRemovedArray(resultVec, encoder.slotCount)
 }
 
 /**
@@ -135,9 +134,9 @@ function decrypt(encryptedResult, clientContext){
  * @param {Object} clientContext client side context
  * @returns {array<number>} resulting array
  */
-function decryptServerResponseObject(serverResponseObject, clientContext){
-    const encryptedResult = JSON.parse(serverResponseObject);
-    return decrypt(encryptedResult, clientContext);
+function decryptServerResponseObject(serverResponseObject, clientContext) {
+  const encryptedResult = JSON.parse(serverResponseObject)
+  return decrypt(encryptedResult, clientContext)
 }
 
 /**
@@ -145,8 +144,8 @@ function decryptServerResponseObject(serverResponseObject, clientContext){
  * @param {Object} clientContext client side context
  * @returns {string} base64 encoded galois key
  */
-function getSerializedGaloisKeys(clientContext){
-    return clientContext.galoisKeys.save();
+function getSerializedGaloisKeys(clientContext) {
+  return clientContext.galoisKeys.save()
 }
 
 /**
@@ -158,35 +157,32 @@ function getSerializedGaloisKeys(clientContext){
  * @param {Object} serverContext server side context
  * @returns {array<CipherText>} an array of ciphertexts
  */
-function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext){
-    const Morfix = serverContext.morfix;
-    const context = serverContext.context;
-    const encoder = serverContext.encoder;
-    const encryptedInputArray = encryptedArray;
-    let galoisKeys = Morfix.GaloisKeys();
-    galoisKeys.load(context, serializedGaloisKeys);
-    serverContext.galois = galoisKeys;
+function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
+  const { morfix, context, encoder } = serverContext
+  const galoisKeys = morfix.GaloisKeys()
+  galoisKeys.load(context, serializedGaloisKeys)
+  serverContext.galois = galoisKeys
 
-    let input = []
-    for (let i = 0; i < encryptedInputArray.length; ++i) {
-        const cipherText = Morfix.CipherText();
-        cipherText.load(context, encryptedInputArray[i]);
-        input.push(cipherText);
-    }
+  const input = encryptedArray.map(inpt => {
+    const cipherText = morfix.CipherText()
+    cipherText.load(context, inpt)
+    return cipherText
+  })
 
-    const [bsgsN1, bsgsN2] = getBsgsParams(encoder.slotCount);
+  const [bsgsN1, bsgsN2] = getBsgsParams(encoder.slotCount)
 
-    let N = matrix.length;
-    let k = matrix[0].length;
+  const N = matrix.length
+  const k = matrix[0].length
 
-    let output = bigMatMul(matrix, input, {N:N, k:k,bsgsN1: bsgsN1, bsgsN2: bsgsN2}, serverContext);
-
-    const convertedOutput = [];
-    output.forEach(item => {
-        convertedOutput.push(item.save());
-    });
-
-    return convertedOutput;
+  const output = bigMatMul(
+    matrix,
+    input,
+    { N, k, bsgsN1, bsgsN2 },
+    serverContext
+  )
+  // cleanup
+  input.forEach(x => x.delete())
+  return output.map(item => item.save())
 }
 
 /**
@@ -197,30 +193,33 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext){
  * @param {Object} serverContext server side context
  * @returns {string} JSON to be sent to client for decryption
  */
-function computeWithClientRequestObject(clientRequestObject, matrix, serverContext){
-    const clientRequestObjectParsed = JSON.parse(clientRequestObject);
-    const computationResult = compute(clientRequestObjectParsed.arr, clientRequestObjectParsed.galois, matrix, serverContext);
-    return getServerResponseObject(computationResult);
-
+function computeWithClientRequestObject(
+  clientRequestObject,
+  matrix,
+  serverContext
+) {
+  const { arr, galois } = JSON.parse(clientRequestObject)
+  const computationResult = compute(arr, galois, matrix, serverContext)
+  return getServerResponseObject(computationResult)
 }
 
-function getClientRequestObject(encryptedArray, clientContext){
-    let galois = clientContext.galoisKeys.save();
-    return JSON.stringify({arr: encryptedArray, galois: galois});
+function getClientRequestObject(encryptedArray, { galoisKeys }) {
+  const galois = galoisKeys.save()
+  return JSON.stringify({ arr: encryptedArray, galois })
 }
 
-function getServerResponseObject(computationResult){
-    return JSON.stringify(computationResult);
+function getServerResponseObject(computationResult) {
+  return JSON.stringify(computationResult)
 }
 
 export default {
-    getClientContext: getClientContext,
-    getServerContext: getServerContext,
-    encrypt: encrypt,
-    encryptForClientRequest: encryptForClientRequest,
-    decrypt: decrypt,
-    decryptServerResponseObject: decryptServerResponseObject,
-    compute: compute,
-    computeWithClientRequestObject: computeWithClientRequestObject,
-    getSerializedGaloisKeys: getSerializedGaloisKeys,
+  getClientContext,
+  getServerContext,
+  encrypt,
+  encryptForClientRequest,
+  decrypt,
+  decryptServerResponseObject,
+  compute,
+  computeWithClientRequestObject,
+  getSerializedGaloisKeys
 }

@@ -35,11 +35,11 @@ function getZeroFilledBigUint64Array(length) {
 }
 
 function getSpecialFormatIndicesVector(numInnerArrays, encoder, vec) {
-  let numberIndices = [];
+  const numberIndices = [];
 
   for (let i = 0; i < numInnerArrays; ++i) {
-    let inner_array = getZeroFilledBigUint64Array(encoder.slotCount);
-    let currentOffset = i * encoder.slotCount;
+    const inner_array = getZeroFilledBigUint64Array(encoder.slotCount);
+    const currentOffset = i * encoder.slotCount;
 
     for (let innerI = 0; innerI < encoder.slotCount; ++innerI) {
       if (currentOffset + innerI < vec.length) {
@@ -69,15 +69,17 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
 function encrypt(inputArray, clientContext) {
   const encoder = clientContext.encoder;
   const encryptor = clientContext.encryptor;
-  let numInnerArrays = getNumberOfInnerArrays(inputArray.length, encoder.slotCount);
+  const numInnerArrays = getNumberOfInnerArrays(inputArray.length, encoder.slotCount);
   const numberIndices = getSpecialFormatIndicesVector(numInnerArrays, encoder, inputArray);
-  let ciphs = [];
+  const ciphs = [];
 
   for (let i = 0; i < numInnerArrays; ++i) {
     const plainText = encoder.encode(numberIndices[i]);
     const cipherText = encryptor.encrypt(plainText);
     const cipherTextBase64 = cipherText.save();
     ciphs.push(cipherTextBase64);
+    plainText.delete();
+    cipherText.delete();
   }
 
   return ciphs;
@@ -96,7 +98,7 @@ function encryptForClientRequest(inputArray, clientContext) {
 }
 
 function getRedundantPartsRemovedArray(arr, slotCount) {
-  let flatArray = [];
+  const flatArray = [];
 
   for (let i = 0; i < arr.length; ++i) {
     for (let j = 0; j < slotCount / 2; ++j) {
@@ -114,16 +116,17 @@ function getRedundantPartsRemovedArray(arr, slotCount) {
  */
 
 
-function decrypt(encryptedResult, clientContext) {
-  const Morfix = clientContext.morfix;
-  const context = clientContext.context;
-  const decryptor = clientContext.decryptor;
-  const encoder = clientContext.encoder;
-  let resultVec = [];
-  encryptedResult.forEach(item => {
-    const cipherText = Morfix.CipherText();
-    cipherText.load(context, item);
-    const plainText = Morfix.PlainText();
+function decrypt(encryptedResult, {
+  morfix,
+  context,
+  decryptor,
+  encoder
+}) {
+  const resultVec = [];
+  encryptedResult.forEach(encRes => {
+    const cipherText = morfix.CipherText();
+    cipherText.load(context, encRes);
+    const plainText = morfix.PlainText();
     const noiseBudget = decryptor.invariantNoiseBudget(cipherText);
 
     if (noiseBudget <= 0) {
@@ -171,35 +174,31 @@ function getSerializedGaloisKeys(clientContext) {
 
 
 function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
-  const Morfix = serverContext.morfix;
-  const context = serverContext.context;
-  const encoder = serverContext.encoder;
-  const encryptedInputArray = encryptedArray;
-  let galoisKeys = Morfix.GaloisKeys();
+  const {
+    morfix,
+    context,
+    encoder
+  } = serverContext;
+  const galoisKeys = morfix.GaloisKeys();
   galoisKeys.load(context, serializedGaloisKeys);
   serverContext.galois = galoisKeys;
-  let input = [];
-
-  for (let i = 0; i < encryptedInputArray.length; ++i) {
-    const cipherText = Morfix.CipherText();
-    cipherText.load(context, encryptedInputArray[i]);
-    input.push(cipherText);
-  }
-
-  const [bsgsN1, bsgsN2] = (0, _MatMul.getBsgsParams)(encoder.slotCount);
-  let N = matrix.length;
-  let k = matrix[0].length;
-  let output = (0, _MatMul.bigMatMul)(matrix, input, {
-    N: N,
-    k: k,
-    bsgsN1: bsgsN1,
-    bsgsN2: bsgsN2
-  }, serverContext);
-  const convertedOutput = [];
-  output.forEach(item => {
-    convertedOutput.push(item.save());
+  const input = encryptedArray.map(inpt => {
+    const cipherText = morfix.CipherText();
+    cipherText.load(context, inpt);
+    return cipherText;
   });
-  return convertedOutput;
+  const [bsgsN1, bsgsN2] = (0, _MatMul.getBsgsParams)(encoder.slotCount);
+  const N = matrix.length;
+  const k = matrix[0].length;
+  const output = (0, _MatMul.bigMatMul)(matrix, input, {
+    N,
+    k,
+    bsgsN1,
+    bsgsN2
+  }, serverContext); // cleanup
+
+  input.forEach(x => x.delete());
+  return output.map(item => item.save());
 }
 /**
  * This function computes the dot product between the encrypted client vector and the server matrix.
@@ -212,16 +211,21 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
 
 
 function computeWithClientRequestObject(clientRequestObject, matrix, serverContext) {
-  const clientRequestObjectParsed = JSON.parse(clientRequestObject);
-  const computationResult = compute(clientRequestObjectParsed.arr, clientRequestObjectParsed.galois, matrix, serverContext);
+  const {
+    arr,
+    galois
+  } = JSON.parse(clientRequestObject);
+  const computationResult = compute(arr, galois, matrix, serverContext);
   return getServerResponseObject(computationResult);
 }
 
-function getClientRequestObject(encryptedArray, clientContext) {
-  let galois = clientContext.galoisKeys.save();
+function getClientRequestObject(encryptedArray, {
+  galoisKeys
+}) {
+  const galois = galoisKeys.save();
   return JSON.stringify({
     arr: encryptedArray,
-    galois: galois
+    galois
   });
 }
 
@@ -230,15 +234,15 @@ function getServerResponseObject(computationResult) {
 }
 
 var _default = {
-  getClientContext: getClientContext,
-  getServerContext: getServerContext,
-  encrypt: encrypt,
-  encryptForClientRequest: encryptForClientRequest,
-  decrypt: decrypt,
-  decryptServerResponseObject: decryptServerResponseObject,
-  compute: compute,
-  computeWithClientRequestObject: computeWithClientRequestObject,
-  getSerializedGaloisKeys: getSerializedGaloisKeys
+  getClientContext,
+  getServerContext,
+  encrypt,
+  encryptForClientRequest,
+  decrypt,
+  decryptServerResponseObject,
+  compute,
+  computeWithClientRequestObject,
+  getSerializedGaloisKeys
 };
 exports.default = _default;
 module.exports = exports.default;
