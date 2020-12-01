@@ -78,7 +78,7 @@ function rotateN(arr, n, toTheRight) {
 function babyStepGiantStepMatMul(
   inputState,
   subMatrix,
-  { morfix, encoder, context, evaluator, galois: galoisKeys },
+  { morfix, encoder, context, evaluator, galois },
   bsgsN1,
   bsgsN2
 ) {
@@ -122,7 +122,7 @@ function babyStepGiantStepMatMul(
   rot[0] = inputState.clone()
 
   for (let j = 1; j < bsgsN1; j++) {
-    rot[j] = evaluator.rotateRows(rot[j - 1], 1, galoisKeys)
+    rot[j] = evaluator.rotateRows(rot[j - 1], 1, galois)
   }
 
   for (let l = 0; l < bsgsN2; l++) {
@@ -137,7 +137,7 @@ function babyStepGiantStepMatMul(
     if (!l) outerSum.copy(innerSum)
     else {
       const tmp = l * bsgsN1
-      evaluator.rotateRows(innerSum, tmp, galoisKeys, innerSum)
+      evaluator.rotateRows(innerSum, tmp, galois, innerSum)
       evaluator.add(outerSum, innerSum, outerSum)
     }
   }

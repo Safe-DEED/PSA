@@ -39,7 +39,7 @@ function getSpecialFormatIndicesVector(numInnerArrays, encoder, vec) {
 
   for (let i = 0; i < numInnerArrays; ++i) {
     const inner_array = getZeroFilledBigUint64Array(encoder.slotCount);
-    let currentOffset = i * encoder.slotCount;
+    const currentOffset = i * encoder.slotCount;
 
     for (let innerI = 0; innerI < encoder.slotCount; ++innerI) {
       if (currentOffset + innerI < vec.length) {
@@ -195,7 +195,9 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
     k,
     bsgsN1,
     bsgsN2
-  }, serverContext);
+  }, serverContext); // cleanup
+
+  input.forEach(x => x.delete());
   return output.map(item => item.save());
 }
 /**
@@ -209,13 +211,18 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
 
 
 function computeWithClientRequestObject(clientRequestObject, matrix, serverContext) {
-  const clientRequestObjectParsed = JSON.parse(clientRequestObject);
-  const computationResult = compute(clientRequestObjectParsed.arr, clientRequestObjectParsed.galois, matrix, serverContext);
+  const {
+    arr,
+    galois
+  } = JSON.parse(clientRequestObject);
+  const computationResult = compute(arr, galois, matrix, serverContext);
   return getServerResponseObject(computationResult);
 }
 
-function getClientRequestObject(encryptedArray, clientContext) {
-  const galois = clientContext.galoisKeys.save();
+function getClientRequestObject(encryptedArray, {
+  galoisKeys
+}) {
+  const galois = galoisKeys.save();
   return JSON.stringify({
     arr: encryptedArray,
     galois

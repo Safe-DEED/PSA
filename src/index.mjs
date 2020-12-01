@@ -180,6 +180,8 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
     { N, k, bsgsN1, bsgsN2 },
     serverContext
   )
+  // cleanup
+  input.forEach(x => x.delete())
   return output.map(item => item.save())
 }
 
@@ -196,18 +198,13 @@ function computeWithClientRequestObject(
   matrix,
   serverContext
 ) {
-  const clientRequestObjectParsed = JSON.parse(clientRequestObject)
-  const computationResult = compute(
-    clientRequestObjectParsed.arr,
-    clientRequestObjectParsed.galois,
-    matrix,
-    serverContext
-  )
+  const { arr, galois } = JSON.parse(clientRequestObject)
+  const computationResult = compute(arr, galois, matrix, serverContext)
   return getServerResponseObject(computationResult)
 }
 
-function getClientRequestObject(encryptedArray, clientContext) {
-  const galois = clientContext.galoisKeys.save()
+function getClientRequestObject(encryptedArray, { galoisKeys }) {
+  const galois = galoisKeys.save()
   return JSON.stringify({ arr: encryptedArray, galois })
 }
 

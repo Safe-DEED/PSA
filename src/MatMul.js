@@ -90,7 +90,7 @@ function babyStepGiantStepMatMul(inputState, subMatrix, {
   encoder,
   context,
   evaluator,
-  galois: galoisKeys
+  galois
 }, bsgsN1, bsgsN2) {
   //big v*M
   const matrixDims = encoder.slotCount >>> 1;
@@ -136,7 +136,7 @@ function babyStepGiantStepMatMul(inputState, subMatrix, {
   rot[0] = inputState.clone();
 
   for (let j = 1; j < bsgsN1; j++) {
-    rot[j] = evaluator.rotateRows(rot[j - 1], 1, galoisKeys);
+    rot[j] = evaluator.rotateRows(rot[j - 1], 1, galois);
   }
 
   for (let l = 0; l < bsgsN2; l++) {
@@ -150,11 +150,11 @@ function babyStepGiantStepMatMul(inputState, subMatrix, {
 
     if (!l) outerSum.copy(innerSum);else {
       const tmp = l * bsgsN1;
-      evaluator.rotateRows(innerSum, tmp, galoisKeys, innerSum);
+      evaluator.rotateRows(innerSum, tmp, galois, innerSum);
       evaluator.add(outerSum, innerSum, outerSum);
     }
   } // Since we only return outerSum, we can clean up
-  // the other WASM instances
+  // the other WASM instances to prevent heap buildup
 
 
   rot.forEach(x => x.delete());
