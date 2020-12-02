@@ -27,7 +27,7 @@ describe('an psa lib', () => {
             [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
     const encryptedArray = PSA.encrypt(array, clientContext)
-    const serializedGaloisKeys = PSA.getSerializedGaloisKeys(clientContext)
+    const serializedGaloisKeys = clientContext.galoisKeys.save()
     const out = PSA.compute(
       encryptedArray,
       serializedGaloisKeys,
