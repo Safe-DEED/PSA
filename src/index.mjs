@@ -22,7 +22,7 @@ async function getServerContext(polyModulusDegree, plainModulus) {
 }
 
 function getZeroFilledBigUint64Array(length) {
-  return new BigUint64Array(length).fill(BigInt(0))
+  return BigUint64Array.from({ length }, _ => BigInt(0))
 }
 
 function getSpecialFormatIndicesVector(numInnerArrays, encoder, vec) {
@@ -52,10 +52,7 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
  * @param {Object} clientContext client side context
  * @returns {array<CipherText>} an array of ciphertexts
  */
-function encrypt(inputArray, clientContext) {
-  const encoder = clientContext.encoder
-  const encryptor = clientContext.encryptor
-
+function encrypt(inputArray, { encoder, encryptor }) {
   const numInnerArrays = getNumberOfInnerArrays(
     inputArray.length,
     encoder.slotCount
@@ -69,11 +66,15 @@ function encrypt(inputArray, clientContext) {
   const ciphs = []
   for (let i = 0; i < numInnerArrays; ++i) {
     const plainText = encoder.encode(numberIndices[i])
-    const cipherText = encryptor.encrypt(plainText)
-    const cipherTextBase64 = cipherText.save()
-    ciphs.push(cipherTextBase64)
+    // Use the `encryptSerializable` function which generates a `Serializable` object
+    // ready to be serialized. The benefit is about a 50% reduction in size,
+    // but you cannot perform any HE operations until it is deserialized into
+    // a proper CipherText instance.
+    const cipherTextSerializable = encryptor.encryptSerializable(plainText)
+    const cipherTextBase64 = cipherTextSerializable.save()
     plainText.delete()
-    cipherText.delete()
+    cipherTextSerializable.delete()
+    ciphs.push(cipherTextBase64)
   }
 
   return ciphs
@@ -107,22 +108,20 @@ function getRedundantPartsRemovedArray(arr, slotCount) {
  * @returns {array<number>} resulting array
  */
 function decrypt(encryptedResult, { morfix, context, decryptor, encoder }) {
-  const resultVec = []
-  encryptedResult.forEach(encRes => {
+  const resultVec = encryptedResult.map(encRes => {
     const cipherText = morfix.CipherText()
     cipherText.load(context, encRes)
-    const plainText = morfix.PlainText()
 
     const noiseBudget = decryptor.invariantNoiseBudget(cipherText)
     if (noiseBudget <= 0) {
       throw new Error('noise budget consumed: ' + noiseBudget)
     }
 
-    decryptor.decrypt(cipherText, plainText)
-    resultVec.push(encoder.decodeBigInt(plainText, false))
-
+    const plainText = decryptor.decrypt(cipherText)
+    const decoded = encoder.decodeBigInt(plainText, false)
     cipherText.delete()
     plainText.delete()
+    return decoded
   })
 
   return getRedundantPartsRemovedArray(resultVec, encoder.slotCount)
@@ -137,15 +136,6 @@ function decrypt(encryptedResult, { morfix, context, decryptor, encoder }) {
 function decryptServerResponseObject(serverResponseObject, clientContext) {
   const encryptedResult = JSON.parse(serverResponseObject)
   return decrypt(encryptedResult, clientContext)
-}
-
-/**
- * This function returns the serialized galois key needed for rotations of the ciphertext.
- * @param {Object} clientContext client side context
- * @returns {string} base64 encoded galois key
- */
-function getSerializedGaloisKeys(clientContext) {
-  return clientContext.galoisKeys.save()
 }
 
 /**
@@ -220,6 +210,5 @@ export default {
   decrypt,
   decryptServerResponseObject,
   compute,
-  computeWithClientRequestObject,
-  getSerializedGaloisKeys
+  computeWithClientRequestObject
 }

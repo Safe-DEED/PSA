@@ -61,8 +61,12 @@ async function createClientHEContext(polyModulusDegree, plainModulus) {
   const encoder = morfix.BatchEncoder(context);
   const keyGenerator = morfix.KeyGenerator(context);
   const publicKey = keyGenerator.createPublicKey();
-  const secretKey = keyGenerator.secretKey();
-  const galoisKeys = keyGenerator.createGaloisKeys();
+  const secretKey = keyGenerator.secretKey(); // Use the `createGaloisKeysSerializable` function which generates a `Serializable` object
+  // ready to be serialized. The benefit is about a 50% reduction in size,
+  // but you cannot perform any HE operations until it is deserialized into
+  // a proper GaloisKeys instance.
+
+  const galoisKeys = keyGenerator.createGaloisKeysSerializable();
   const encryptor = morfix.Encryptor(context, publicKey);
   const decryptor = morfix.Decryptor(context, secretKey);
   const evaluator = morfix.Evaluator(context);
