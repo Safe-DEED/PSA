@@ -197,6 +197,16 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
   return output.map(item => item.save());
 }
 /**
+ * This function returns the serialized galois key needed for rotations of the ciphertext.
+ * @param {Object} clientContext client side context
+ * @returns {string} base64 encoded galois key
+ */
+
+
+function getSerializedGaloisKeys(clientContext) {
+  return clientContext.galoisKeys.save();
+}
+/**
  * This function computes the dot product between the encrypted client vector and the server matrix.
  * Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
  * @param {string} clientRequestObject client request object (JSON), received from client
@@ -237,7 +247,8 @@ var _default = {
   decrypt,
   decryptServerResponseObject,
   compute,
-  computeWithClientRequestObject
+  computeWithClientRequestObject,
+  getSerializedGaloisKeys
 };
 exports.default = _default;
 module.exports = exports.default;
