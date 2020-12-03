@@ -56,16 +56,16 @@ async function createHEContext(polyModulusDegree, plainModulus) {
   return [Morfix, context]
 }
 
-export function getComprModeType(compression, morfix) {
+function getComprModeType(compression, { ComprModeType }) {
   switch (compression) {
     case 'none':
-      return morfix.ComprModeType.none
+      return ComprModeType.none
     case 'zlib':
-      return morfix.ComprModeType.zlib
+      return ComprModeType.zlib
     case 'zstd':
-      return morfix.ComprModeType.zstd
+      return ComprModeType.zstd
     default:
-      return morfix.ComprModeType.zstd
+      return ComprModeType.zstd
   }
 }
 
