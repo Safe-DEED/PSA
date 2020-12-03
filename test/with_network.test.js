@@ -11,10 +11,16 @@ describe('an psa lib', () => {
         plainModulus,
         compressionMode
       )
+      expect(clientContext.compression).toBe(
+        clientContext.morfix.ComprModeType[compressionMode]
+      )
       const serverContext = await PSA.getServerContext(
         polyModulusDegree,
         plainModulus,
         compressionMode
+      )
+      expect(serverContext.compression).toBe(
+        serverContext.morfix.ComprModeType[compressionMode]
       )
       // prettier-ignore
       const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
