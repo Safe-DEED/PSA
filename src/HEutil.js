@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getComprModeType = getComprModeType;
 exports.createClientHEContext = createClientHEContext;
 exports.createServerHEContext = createServerHEContext;
 
@@ -56,7 +57,23 @@ async function createHEContext(polyModulusDegree, plainModulus) {
   return [Morfix, context];
 }
 
-async function createClientHEContext(polyModulusDegree, plainModulus) {
+function getComprModeType(compression, morfix) {
+  switch (compression) {
+    case 'none':
+      return morfix.ComprModeType.none;
+
+    case 'zlib':
+      return morfix.ComprModeType.zlib;
+
+    case 'zstd':
+      return morfix.ComprModeType.zstd;
+
+    default:
+      return morfix.ComprModeType.zstd;
+  }
+}
+
+async function createClientHEContext(polyModulusDegree, plainModulus, compressionMode) {
   const [morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
   const encoder = morfix.BatchEncoder(context);
   const keyGenerator = morfix.KeyGenerator(context);
@@ -70,8 +87,10 @@ async function createClientHEContext(polyModulusDegree, plainModulus) {
   const encryptor = morfix.Encryptor(context, publicKey);
   const decryptor = morfix.Decryptor(context, secretKey);
   const evaluator = morfix.Evaluator(context);
+  const compression = getComprModeType(compressionMode, morfix);
   return {
     morfix,
+    compression,
     context,
     encoder,
     keyGenerator,
@@ -84,12 +103,14 @@ async function createClientHEContext(polyModulusDegree, plainModulus) {
   };
 }
 
-async function createServerHEContext(polyModulusDegree, plainModulus) {
+async function createServerHEContext(polyModulusDegree, plainModulus, compressionMode) {
   const [morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
   const encoder = morfix.BatchEncoder(context);
   const evaluator = morfix.Evaluator(context);
+  const compression = getComprModeType(compressionMode, morfix);
   return {
     morfix,
+    compression,
     context,
     encoder,
     evaluator

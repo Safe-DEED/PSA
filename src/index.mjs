@@ -5,20 +5,38 @@ import { bigMatMul, getBsgsParams } from './MatMul'
  * This asynchronous function return the client context object.
  * @param {number} polyModulusDegree the polymodulus degree
  * @param {number} plainModulus the plaintext modulus
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
  * @returns {Object} a context object necessary for client side actions
  */
-async function getClientContext(polyModulusDegree, plainModulus) {
-  return await createClientHEContext(polyModulusDegree, plainModulus)
+async function getClientContext(
+  polyModulusDegree,
+  plainModulus,
+  compressionMode = 'zstd'
+) {
+  return await createClientHEContext(
+    polyModulusDegree,
+    plainModulus,
+    compressionMode
+  )
 }
 
 /**
  * This asynchronous function return the server context object.
- *  @param {number} polyModulusDegree the polymodulus degree
+ * @param {number} polyModulusDegree the polymodulus degree
  * @param {number} plainModulus the plaintext modulus
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
  * @returns {Object} a context object necessary for client side actions
  */
-async function getServerContext(polyModulusDegree, plainModulus) {
-  return await createServerHEContext(polyModulusDegree, plainModulus)
+async function getServerContext(
+  polyModulusDegree,
+  plainModulus,
+  compressionMode = 'zstd'
+) {
+  return await createServerHEContext(
+    polyModulusDegree,
+    plainModulus,
+    compressionMode
+  )
 }
 
 function getZeroFilledBigUint64Array(length) {
@@ -52,7 +70,7 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
  * @param {Object} clientContext client side context
  * @returns {array<CipherText>} an array of ciphertexts
  */
-function encrypt(inputArray, { encoder, encryptor }) {
+function encrypt(inputArray, { compression, encoder, encryptor }) {
   const numInnerArrays = getNumberOfInnerArrays(
     inputArray.length,
     encoder.slotCount
@@ -71,7 +89,7 @@ function encrypt(inputArray, { encoder, encryptor }) {
     // but you cannot perform any HE operations until it is deserialized into
     // a proper CipherText instance.
     const cipherTextSerializable = encryptor.encryptSerializable(plainText)
-    const cipherTextBase64 = cipherTextSerializable.save()
+    const cipherTextBase64 = cipherTextSerializable.save(compression)
     plainText.delete()
     cipherTextSerializable.delete()
     ciphs.push(cipherTextBase64)
@@ -172,7 +190,7 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
   )
   // cleanup
   input.forEach(x => x.delete())
-  return output.map(item => item.save())
+  return output.map(item => item.save(serverContext.compression))
 }
 
 /**
@@ -181,7 +199,7 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
  * @returns {string} base64 encoded galois key
  */
 function getSerializedGaloisKeys(clientContext) {
-  return clientContext.galoisKeys.save()
+  return clientContext.galoisKeys.save(clientContext.compression)
 }
 
 /**
@@ -202,8 +220,8 @@ function computeWithClientRequestObject(
   return getServerResponseObject(computationResult)
 }
 
-function getClientRequestObject(encryptedArray, { galoisKeys }) {
-  const galois = galoisKeys.save()
+function getClientRequestObject(encryptedArray, { compression, galoisKeys }) {
+  const galois = galoisKeys.save(compression)
   return JSON.stringify({ arr: encryptedArray, galois })
 }
 

@@ -13,21 +13,23 @@ var _MatMul = require("./MatMul");
  * This asynchronous function return the client context object.
  * @param {number} polyModulusDegree the polymodulus degree
  * @param {number} plainModulus the plaintext modulus
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
  * @returns {Object} a context object necessary for client side actions
  */
-async function getClientContext(polyModulusDegree, plainModulus) {
-  return await (0, _HEutil.createClientHEContext)(polyModulusDegree, plainModulus);
+async function getClientContext(polyModulusDegree, plainModulus, compressionMode = 'zstd') {
+  return await (0, _HEutil.createClientHEContext)(polyModulusDegree, plainModulus, compressionMode);
 }
 /**
  * This asynchronous function return the server context object.
- *  @param {number} polyModulusDegree the polymodulus degree
+ * @param {number} polyModulusDegree the polymodulus degree
  * @param {number} plainModulus the plaintext modulus
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
  * @returns {Object} a context object necessary for client side actions
  */
 
 
-async function getServerContext(polyModulusDegree, plainModulus) {
-  return await (0, _HEutil.createServerHEContext)(polyModulusDegree, plainModulus);
+async function getServerContext(polyModulusDegree, plainModulus, compressionMode = 'zstd') {
+  return await (0, _HEutil.createServerHEContext)(polyModulusDegree, plainModulus, compressionMode);
 }
 
 function getZeroFilledBigUint64Array(length) {
@@ -69,6 +71,7 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
 
 
 function encrypt(inputArray, {
+  compression,
   encoder,
   encryptor
 }) {
@@ -83,7 +86,7 @@ function encrypt(inputArray, {
     // a proper CipherText instance.
 
     const cipherTextSerializable = encryptor.encryptSerializable(plainText);
-    const cipherTextBase64 = cipherTextSerializable.save();
+    const cipherTextBase64 = cipherTextSerializable.save(compression);
     plainText.delete();
     cipherTextSerializable.delete();
     ciphs.push(cipherTextBase64);
@@ -194,7 +197,7 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
   }, serverContext); // cleanup
 
   input.forEach(x => x.delete());
-  return output.map(item => item.save());
+  return output.map(item => item.save(serverContext.compression));
 }
 /**
  * This function returns the serialized galois key needed for rotations of the ciphertext.
@@ -204,7 +207,7 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
 
 
 function getSerializedGaloisKeys(clientContext) {
-  return clientContext.galoisKeys.save();
+  return clientContext.galoisKeys.save(clientContext.compression);
 }
 /**
  * This function computes the dot product between the encrypted client vector and the server matrix.
@@ -226,9 +229,10 @@ function computeWithClientRequestObject(clientRequestObject, matrix, serverConte
 }
 
 function getClientRequestObject(encryptedArray, {
+  compression,
   galoisKeys
 }) {
-  const galois = galoisKeys.save();
+  const galois = galoisKeys.save(compression);
   return JSON.stringify({
     arr: encryptedArray,
     galois
