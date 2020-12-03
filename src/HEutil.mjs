@@ -56,7 +56,24 @@ async function createHEContext(polyModulusDegree, plainModulus) {
   return [Morfix, context]
 }
 
-export async function createClientHEContext(polyModulusDegree, plainModulus) {
+function getComprModeType(compression, { ComprModeType }) {
+  switch (compression) {
+    case 'none':
+      return ComprModeType.none
+    case 'zlib':
+      return ComprModeType.zlib
+    case 'zstd':
+      return ComprModeType.zstd
+    default:
+      return ComprModeType.zstd
+  }
+}
+
+export async function createClientHEContext(
+  polyModulusDegree,
+  plainModulus,
+  compressionMode
+) {
   const [morfix, context] = await createHEContext(
     polyModulusDegree,
     plainModulus
@@ -74,9 +91,11 @@ export async function createClientHEContext(polyModulusDegree, plainModulus) {
   const encryptor = morfix.Encryptor(context, publicKey)
   const decryptor = morfix.Decryptor(context, secretKey)
   const evaluator = morfix.Evaluator(context)
+  const compression = getComprModeType(compressionMode, morfix)
 
   return {
     morfix,
+    compression,
     context,
     encoder,
     keyGenerator,
@@ -89,12 +108,18 @@ export async function createClientHEContext(polyModulusDegree, plainModulus) {
   }
 }
 
-export async function createServerHEContext(polyModulusDegree, plainModulus) {
+export async function createServerHEContext(
+  polyModulusDegree,
+  plainModulus,
+  compressionMode
+) {
   const [morfix, context] = await createHEContext(
     polyModulusDegree,
     plainModulus
   )
   const encoder = morfix.BatchEncoder(context)
   const evaluator = morfix.Evaluator(context)
-  return { morfix, context, encoder, evaluator }
+  const compression = getComprModeType(compressionMode, morfix)
+
+  return { morfix, compression, context, encoder, evaluator }
 }
