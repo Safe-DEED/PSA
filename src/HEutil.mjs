@@ -34,6 +34,7 @@ async function createHEContext(
     true, // ExpandModChain
     secLevel // Enforce a security level
   )
+  parms.delete()
 
   if (!context.parametersSet()) {
     throw new Error(

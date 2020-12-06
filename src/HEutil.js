@@ -30,6 +30,7 @@ async function createHEContext(polyModulusDegree, securityLevel, plainModulusBit
   true, // ExpandModChain
   secLevel // Enforce a security level
   );
+  parms.delete();
 
   if (!context.parametersSet()) {
     throw new Error('Could not set the parameters in the given context. Please try different encryption parameters.');
