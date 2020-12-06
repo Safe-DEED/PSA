@@ -1,51 +1,43 @@
 import PSA from '../src'
 
-describe('an psa lib', () => {
-  it('passed compression parameter: "none"', async () => {
-    const polyModulusDegree = 4096
-    const plainModulus = 20
-    const clientContext = await PSA.getClientContext(
-      polyModulusDegree,
-      plainModulus,
-      'none'
-    )
+describe('compression mode settings', () => {
+  it('should initialize with compression mode: none', async () => {
+    const clientContext = await PSA.getClientContext({
+      polyModulusDegree: 4096,
+      plainModulusBitSize: 20,
+      compressionMode: 'none'
+    })
     expect(clientContext.compression).toBe(
-      clientContext.morfix.ComprModeType.none
+      clientContext.seal.ComprModeType.none
     )
   })
-  it('passed compression parameter: "zlib"', async () => {
-    const polyModulusDegree = 4096
-    const plainModulus = 20
-    const clientContext = await PSA.getClientContext(
-      polyModulusDegree,
-      plainModulus,
-      'zlib'
-    )
+  it('should initialize with compression mode: zlib', async () => {
+    const clientContext = await PSA.getClientContext({
+      polyModulusDegree: 4096,
+      plainModulusBitSize: 20,
+      compressionMode: 'zlib'
+    })
     expect(clientContext.compression).toBe(
-      clientContext.morfix.ComprModeType.zlib
+      clientContext.seal.ComprModeType.zlib
     )
   })
-  it('passed compression parameter: "zstd"', async () => {
-    const polyModulusDegree = 4096
-    const plainModulus = 20
-    const clientContext = await PSA.getClientContext(
-      polyModulusDegree,
-      plainModulus,
-      'zstd'
-    )
+  it('should initialize with compression mode: zstd', async () => {
+    const clientContext = await PSA.getClientContext({
+      polyModulusDegree: 4096,
+      plainModulusBitSize: 20,
+      compressionMode: 'zstd'
+    })
     expect(clientContext.compression).toBe(
-      clientContext.morfix.ComprModeType.zstd
+      clientContext.seal.ComprModeType.zstd
     )
   })
-  it('passed compression parameter: undefined', async () => {
-    const polyModulusDegree = 4096
-    const plainModulus = 20
-    const clientContext = await PSA.getClientContext(
-      polyModulusDegree,
-      plainModulus
-    )
+  it('should initialize with a default compression mode (zstd): undefined', async () => {
+    const clientContext = await PSA.getClientContext({
+      polyModulusDegree: 4096,
+      plainModulusBitSize: 20
+    })
     expect(clientContext.compression).toBe(
-      clientContext.morfix.ComprModeType.zstd
+      clientContext.seal.ComprModeType.zstd
     )
   })
 })

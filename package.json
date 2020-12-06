@@ -18,7 +18,7 @@
     "url": "https://github.com/Safe-DEED/PSA"
   },
   "dependencies": {
-    "node-seal": "^4.5.0"
+    "node-seal": "^4.5.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.8",

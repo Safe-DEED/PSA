@@ -72,35 +72,41 @@ increase the JavaScript heap size by adding `--max-old-space-size=4096` for Node
 
 #### getClientContext
 
-[src/index.mjs:11-13](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L11-L13 'Source code on GitHub')
+[src/index.mjs:11-21](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L11-L21 'Source code on GitHub')
 
 This asynchronous function return the client context object.
 
 ##### Parameters
 
+Accepts an Object with the following keys:
+
 - `polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree
 - `plainModulus` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
-- `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use
+- `securityLevel` **[number<128|192|256>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the security level to use. Defaults to 128 bits.
+- `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use. Defaults to 'zstd'
 
 Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** a context object necessary for client side actions
 
 #### getServerContext
 
-[src/index.mjs:21-23](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L21-L23 'Source code on GitHub')
+[src/index.mjs:30-40](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L30-L40 'Source code on GitHub')
 
 This asynchronous function return the server context object.
 
 ##### Parameters
 
+Accepts an Object with the following keys:
+
 - `polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree
 - `plainModulus` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
-- `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use
+- `securityLevel` **[number<128|192|256>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the security level to use. Defaults to 128 bits.
+- `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use. Defaults to 'zstd'
 
 Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** a context object necessary for client side actions
 
 #### encrypt
 
-[src/index.mjs:58-76](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L58-L76 'Source code on GitHub')
+[src/index.mjs:73-99](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L73-L99 'Source code on GitHub')
 
 This function encrypts the client's input vector and returns an array of ciphertexts.
 
@@ -113,7 +119,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### encryptForClientRequest
 
-[src/index.mjs:84-87](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L84-L87 'Source code on GitHub')
+[src/index.mjs:107-120](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L107-L120 'Source code on GitHub')
 
 This function encrypts the client's input vector and returns an object ready to be sent to the server.
 
@@ -126,7 +132,7 @@ Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### decrypt
 
-[src/index.mjs:105-130](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L105-L130 'Source code on GitHub')
+[src/index.mjs:128-146](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L128-L146 'Source code on GitHub')
 
 This function decrypts the computed result vector. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
@@ -139,7 +145,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### decryptServerResponseObject
 
-[src/index.mjs:138-141](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L138-L141 'Source code on GitHub')
+[src/index.mjs:154-157](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L154-L157 'Source code on GitHub')
 
 This function decrypts the server response object. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
@@ -152,7 +158,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### getSerializedGaloisKeys
 
-[src/index.mjs:148-150](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L148-L150 'Source code on GitHub')
+[src/index.mjs:201-203](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L201-L203 'Source code on GitHub')
 
 This function returns the serialized galois key needed for rotations of the ciphertext.
 
@@ -164,7 +170,7 @@ Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### compute
 
-[src/index.mjs:161-190](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L161-L190 'Source code on GitHub')
+[src/index.mjs:168-194](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L168-L194 'Source code on GitHub')
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
@@ -180,7 +186,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### computeWithClientRequestObject
 
-[src/index.mjs:200-205](https://github.com/Safe-DEED/PSA/blob/2bdaec3efffe284c0299eb11f291cd9b9cea6a08/src/index.mjs#L200-L205 'Source code on GitHub')
+[src/index.mjs:213-230](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L213-L230 'Source code on GitHub')
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
