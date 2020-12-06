@@ -81,7 +81,7 @@ This asynchronous function return the client context object.
 Accepts an Object with the following keys:
 
 - `polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree
-- `plainModulus` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
+- `plainModulusBitSize` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
 - `securityLevel` **[number<128|192|256>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the security level to use. Defaults to 128 bits.
 - `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use. Defaults to 'zstd'
 
@@ -98,7 +98,7 @@ This asynchronous function return the server context object.
 Accepts an Object with the following keys:
 
 - `polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree
-- `plainModulus` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
+- `plainModulusBitSize` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
 - `securityLevel` **[number<128|192|256>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the security level to use. Defaults to 128 bits.
 - `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use. Defaults to 'zstd'
 
