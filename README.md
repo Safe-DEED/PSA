@@ -72,7 +72,7 @@ increase the JavaScript heap size by adding `--max-old-space-size=4096` for Node
 
 #### getClientContext
 
-[src/index.mjs:11-21](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L11-L21 'Source code on GitHub')
+[src/index.mjs:12-24](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L12-L24 'Source code on GitHub')
 
 This asynchronous function return the client context object.
 
@@ -89,7 +89,7 @@ Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### getServerContext
 
-[src/index.mjs:30-40](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L30-L40 'Source code on GitHub')
+[src/index.mjs:34-46](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L34-L46'Source code on GitHub')
 
 This asynchronous function return the server context object.
 
@@ -106,7 +106,7 @@ Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### encrypt
 
-[src/index.mjs:73-99](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L73-L99 'Source code on GitHub')
+[src/index.mjs:79-105](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L79-L105 'Source code on GitHub')
 
 This function encrypts the client's input vector and returns an array of ciphertexts.
 
@@ -119,7 +119,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### encryptForClientRequest
 
-[src/index.mjs:107-120](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L107-L120 'Source code on GitHub')
+[src/index.mjs:113-126](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L113-L126 'Source code on GitHub')
 
 This function encrypts the client's input vector and returns an object ready to be sent to the server.
 
@@ -132,7 +132,7 @@ Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### decrypt
 
-[src/index.mjs:128-146](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L128-L146 'Source code on GitHub')
+[src/index.mjs:134-152](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L134-L152 'Source code on GitHub')
 
 This function decrypts the computed result vector. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
@@ -145,7 +145,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### decryptServerResponseObject
 
-[src/index.mjs:154-157](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L154-L157 'Source code on GitHub')
+[src/index.mjs:160-163](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L160-L163 'Source code on GitHub')
 
 This function decrypts the server response object. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
@@ -158,7 +158,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### getSerializedGaloisKeys
 
-[src/index.mjs:201-203](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L201-L203 'Source code on GitHub')
+[src/index.mjs:207-209](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L207-L209 'Source code on GitHub')
 
 This function returns the serialized galois key needed for rotations of the ciphertext.
 
@@ -170,7 +170,7 @@ Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/G
 
 #### compute
 
-[src/index.mjs:168-194](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L168-L194 'Source code on GitHub')
+[src/index.mjs:174-200](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L174-L200 'Source code on GitHub')
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
@@ -186,7 +186,7 @@ Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 #### computeWithClientRequestObject
 
-[src/index.mjs:213-230](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L213-L230 'Source code on GitHub')
+[src/index.mjs:219-236](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L219-L236 'Source code on GitHub')
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
