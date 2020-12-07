@@ -4,18 +4,21 @@ import { bigMatMul, getBsgsParams } from './MatMul'
 /**
  * This asynchronous function return the client context object.
  * @param {number} polyModulusDegree the polymodulus degree
- * @param {number} plainModulus the plaintext modulus
- * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
+ * @param {number} plainModulusBitSize the bit size of the plaintext modulus prime that will be generated
+ * @param {(128|192|256)} [securityLevel=128] the security level in bits (default = 128)
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization (default = zstd)
  * @returns {Object} a context object necessary for client side actions
  */
-async function getClientContext(
+async function getClientContext({
   polyModulusDegree,
-  plainModulus,
+  plainModulusBitSize,
+  securityLevel = 128,
   compressionMode = 'zstd'
-) {
+}) {
   return await createClientHEContext(
     polyModulusDegree,
-    plainModulus,
+    plainModulusBitSize,
+    securityLevel,
     compressionMode
   )
 }
@@ -23,18 +26,21 @@ async function getClientContext(
 /**
  * This asynchronous function return the server context object.
  * @param {number} polyModulusDegree the polymodulus degree
- * @param {number} plainModulus the plaintext modulus
- * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
+ * @param {number} plainModulusBitSize the bit size of the plaintext modulus prime that will be generated
+ * @param {(128|192|256)} [securityLevel=128] the security level in bits (default = 128)
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization (default = zstd)
  * @returns {Object} a context object necessary for client side actions
  */
-async function getServerContext(
+async function getServerContext({
   polyModulusDegree,
-  plainModulus,
+  plainModulusBitSize,
+  securityLevel = 128,
   compressionMode = 'zstd'
-) {
+}) {
   return await createServerHEContext(
     polyModulusDegree,
-    plainModulus,
+    plainModulusBitSize,
+    securityLevel,
     compressionMode
   )
 }
@@ -125,9 +131,9 @@ function getRedundantPartsRemovedArray(arr, slotCount) {
  * @param {Object} clientContext client side context
  * @returns {array<number>} resulting array
  */
-function decrypt(encryptedResult, { morfix, context, decryptor, encoder }) {
+function decrypt(encryptedResult, { seal, context, decryptor, encoder }) {
   const resultVec = encryptedResult.map(encRes => {
-    const cipherText = morfix.CipherText()
+    const cipherText = seal.CipherText()
     cipherText.load(context, encRes)
 
     const noiseBudget = decryptor.invariantNoiseBudget(cipherText)
@@ -166,13 +172,13 @@ function decryptServerResponseObject(serverResponseObject, clientContext) {
  * @returns {array<CipherText>} an array of ciphertexts
  */
 function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
-  const { morfix, context, encoder } = serverContext
-  const galoisKeys = morfix.GaloisKeys()
+  const { seal, context, encoder } = serverContext
+  const galoisKeys = seal.GaloisKeys()
   galoisKeys.load(context, serializedGaloisKeys)
   serverContext.galois = galoisKeys
 
   const input = encryptedArray.map(inpt => {
-    const cipherText = morfix.CipherText()
+    const cipherText = seal.CipherText()
     cipherText.load(context, inpt)
     return cipherText
   })

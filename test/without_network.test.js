@@ -5,23 +5,22 @@ describe('an psa lib', () => {
     'without networking object (compression: %s)',
     async compressionMode => {
       const polyModulusDegree = 4096
-      const plainModulus = 20
-      const clientContext = await PSA.getClientContext(
+      const plainModulusBitSize = 20
+      const clientContext = await PSA.getClientContext({
         polyModulusDegree,
-        plainModulus,
+        plainModulusBitSize,
         compressionMode
-      )
+      })
+
       expect(clientContext.compression).toBe(
-        clientContext.morfix.ComprModeType[compressionMode]
+        clientContext.seal.ComprModeType[compressionMode]
       )
-      const serverContext = await PSA.getServerContext(
+
+      const serverContext = await PSA.getServerContext({
         polyModulusDegree,
-        plainModulus,
+        plainModulusBitSize,
         compressionMode
-      )
-      expect(serverContext.compression).toBe(
-        serverContext.morfix.ComprModeType[compressionMode]
-      )
+      })
       // prettier-ignore
       const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
             27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
@@ -47,7 +46,7 @@ describe('an psa lib', () => {
 
       // ------------------ TEST---------
       for (let i = 0; i < out.length; ++i) {
-        const cipherText = clientContext.morfix.CipherText({
+        const cipherText = clientContext.seal.CipherText({
           context: clientContext.context
         })
         cipherText.load(clientContext.context, out[i])

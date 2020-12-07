@@ -5,22 +5,25 @@ describe('an psa lib', () => {
     'with networking object (compression: %s)',
     async compressionMode => {
       const polyModulusDegree = 4096
-      const plainModulus = 20
-      const clientContext = await PSA.getClientContext(
+      const plainModulusBitSize = 20
+
+      const clientContext = await PSA.getClientContext({
         polyModulusDegree,
-        plainModulus,
+        plainModulusBitSize,
         compressionMode
-      )
+      })
+
       expect(clientContext.compression).toBe(
-        clientContext.morfix.ComprModeType[compressionMode]
+        clientContext.seal.ComprModeType[compressionMode]
       )
-      const serverContext = await PSA.getServerContext(
+
+      const serverContext = await PSA.getServerContext({
         polyModulusDegree,
-        plainModulus,
+        plainModulusBitSize,
         compressionMode
-      )
+      })
       expect(serverContext.compression).toBe(
-        serverContext.morfix.ComprModeType[compressionMode]
+        serverContext.seal.ComprModeType[compressionMode]
       )
       // prettier-ignore
       const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
@@ -47,7 +50,7 @@ describe('an psa lib', () => {
       // ------------------ TEST---------
       const computationResult = JSON.parse(serverResponse)
       for (let i = 0; i < computationResult.length; ++i) {
-        const cipherText = clientContext.morfix.CipherText()
+        const cipherText = clientContext.seal.CipherText()
         cipherText.load(clientContext.context, computationResult[i])
         const noiseBudget = clientContext.decryptor.invariantNoiseBudget(
           cipherText

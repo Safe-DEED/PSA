@@ -86,7 +86,7 @@ function rotateN(arr, n, toTheRight) {
 }
 
 function babyStepGiantStepMatMul(inputState, subMatrix, {
-  morfix,
+  seal,
   encoder,
   context,
   evaluator,
@@ -122,10 +122,10 @@ function babyStepGiantStepMatMul(inputState, subMatrix, {
     matrix.push(row);
   }
 
-  const outerSum = morfix.CipherText({
+  const outerSum = seal.CipherText({
     context
   });
-  const innerSum = morfix.CipherText({
+  const innerSum = seal.CipherText({
     context
   }); // prepare rotations
 

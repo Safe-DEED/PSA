@@ -12,24 +12,36 @@ var _MatMul = require("./MatMul");
 /**
  * This asynchronous function return the client context object.
  * @param {number} polyModulusDegree the polymodulus degree
- * @param {number} plainModulus the plaintext modulus
- * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
+ * @param {number} plainModulusBitSize the bit size of the plaintext modulus prime that will be generated
+ * @param {(128|192|256)} [securityLevel=128] the security level in bits (default = 128)
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization (default = zstd)
  * @returns {Object} a context object necessary for client side actions
  */
-async function getClientContext(polyModulusDegree, plainModulus, compressionMode = 'zstd') {
-  return await (0, _HEutil.createClientHEContext)(polyModulusDegree, plainModulus, compressionMode);
+async function getClientContext({
+  polyModulusDegree,
+  plainModulusBitSize,
+  securityLevel = 128,
+  compressionMode = 'zstd'
+}) {
+  return await (0, _HEutil.createClientHEContext)(polyModulusDegree, plainModulusBitSize, securityLevel, compressionMode);
 }
 /**
  * This asynchronous function return the server context object.
  * @param {number} polyModulusDegree the polymodulus degree
- * @param {number} plainModulus the plaintext modulus
- * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization
+ * @param {number} plainModulusBitSize the bit size of the plaintext modulus prime that will be generated
+ * @param {(128|192|256)} [securityLevel=128] the security level in bits (default = 128)
+ * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization (default = zstd)
  * @returns {Object} a context object necessary for client side actions
  */
 
 
-async function getServerContext(polyModulusDegree, plainModulus, compressionMode = 'zstd') {
-  return await (0, _HEutil.createServerHEContext)(polyModulusDegree, plainModulus, compressionMode);
+async function getServerContext({
+  polyModulusDegree,
+  plainModulusBitSize,
+  securityLevel = 128,
+  compressionMode = 'zstd'
+}) {
+  return await (0, _HEutil.createServerHEContext)(polyModulusDegree, plainModulusBitSize, securityLevel, compressionMode);
 }
 
 function getZeroFilledBigUint64Array(length) {
@@ -127,13 +139,13 @@ function getRedundantPartsRemovedArray(arr, slotCount) {
 
 
 function decrypt(encryptedResult, {
-  morfix,
+  seal,
   context,
   decryptor,
   encoder
 }) {
   const resultVec = encryptedResult.map(encRes => {
-    const cipherText = morfix.CipherText();
+    const cipherText = seal.CipherText();
     cipherText.load(context, encRes);
     const noiseBudget = decryptor.invariantNoiseBudget(cipherText);
 
@@ -174,15 +186,15 @@ function decryptServerResponseObject(serverResponseObject, clientContext) {
 
 function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
   const {
-    morfix,
+    seal,
     context,
     encoder
   } = serverContext;
-  const galoisKeys = morfix.GaloisKeys();
+  const galoisKeys = seal.GaloisKeys();
   galoisKeys.load(context, serializedGaloisKeys);
   serverContext.galois = galoisKeys;
   const input = encryptedArray.map(inpt => {
-    const cipherText = morfix.CipherText();
+    const cipherText = seal.CipherText();
     cipherText.load(context, inpt);
     return cipherText;
   });

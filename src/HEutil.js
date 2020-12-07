@@ -10,50 +10,95 @@ var _allows_wasm_node_umd = _interopRequireDefault(require("node-seal/allows_was
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-async function createHEContext(polyModulusDegree, plainModulus) {
-  // TODO: If it is possible for the application to create multiple client/server contexts,
-  // we should move this out into a global singleton as it will trigger a warning
-  // related to too many listeners (how WASM signals it is initialized internally).
-  const Morfix = await (0, _allows_wasm_node_umd.default)();
-  const schemeType = Morfix.SchemeType.bfv;
-  const securityLevel = Morfix.SecurityLevel.tc128;
-  let bitSizes;
+async function createHEContext(polyModulusDegree, securityLevel, plainModulusBitSize) {
+  const seal = await (0, _allows_wasm_node_umd.default)();
+  const schemeType = seal.SchemeType.bfv;
+  const secLevel = getSecurityLevel(securityLevel, seal);
+  const parms = seal.EncryptionParameters(schemeType); // Set the PolyModulusDegree
 
-  switch (polyModulusDegree) {
-    case 4096:
-      bitSizes = [36, 36, 37];
-      break;
+  parms.setPolyModulusDegree(polyModulusDegree); // Create a suitable set of CoeffModulus primes.
+  // We use the default helper
 
-    case 8192:
-      bitSizes = [43, 43, 44, 44, 44];
-      break;
+  const coeffModulus = seal.CoeffModulus.BFVDefault(polyModulusDegree, secLevel);
+  parms.setCoeffModulus(coeffModulus);
+  coeffModulus.delete(); // Create and set the PlainModulus to a prime of bitSize
 
-    case 16384:
-      bitSizes = [48, 48, 48, 49, 49, 49, 49, 49, 49];
-      break;
-
-    default:
-      throw new Error('unknown polyModulusDegree ' + polyModulusDegree);
-  }
-
-  const bitSize = plainModulus;
-  const parms = Morfix.EncryptionParameters(schemeType); // Set the PolyModulusDegree
-
-  parms.setPolyModulusDegree(polyModulusDegree); // Create a suitable set of CoeffModulus primes
-
-  parms.setCoeffModulus(Morfix.CoeffModulus.Create(polyModulusDegree, Int32Array.from(bitSizes))); // Set the PlainModulus to a prime of bitSize 20.
-
-  parms.setPlainModulus(Morfix.PlainModulus.Batching(polyModulusDegree, bitSize));
-  const context = Morfix.Context(parms, // Encryption Parameters
+  const plainModulus = seal.PlainModulus.Batching(polyModulusDegree, plainModulusBitSize);
+  parms.setPlainModulus(plainModulus);
+  plainModulus.delete();
+  const context = seal.Context(parms, // Encryption Parameters
   true, // ExpandModChain
-  securityLevel // Enforce a security level
+  secLevel // Enforce a security level
   );
+  parms.delete();
 
   if (!context.parametersSet()) {
     throw new Error('Could not set the parameters in the given context. Please try different encryption parameters.');
   }
 
-  return [Morfix, context];
+  return [seal, context];
+}
+
+async function createClientHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode) {
+  const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
+  const encoder = seal.BatchEncoder(context);
+  const keyGenerator = seal.KeyGenerator(context);
+  const publicKey = keyGenerator.createPublicKey();
+  const secretKey = keyGenerator.secretKey(); // Use the `createGaloisKeysSerializable` function which generates a `Serializable` object
+  // ready to be serialized. The benefit is about a 50% reduction in size,
+  // but you cannot perform any HE operations until it is deserialized into
+  // a proper GaloisKeys instance.
+
+  const galoisKeys = keyGenerator.createGaloisKeysSerializable();
+  const encryptor = seal.Encryptor(context, publicKey);
+  const decryptor = seal.Decryptor(context, secretKey);
+  const evaluator = seal.Evaluator(context);
+  const compression = getComprModeType(compressionMode, seal);
+  return {
+    seal,
+    compression,
+    context,
+    encoder,
+    keyGenerator,
+    publicKey,
+    secretKey,
+    galoisKeys,
+    encryptor,
+    decryptor,
+    evaluator
+  };
+}
+
+async function createServerHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode) {
+  const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
+  const encoder = seal.BatchEncoder(context);
+  const evaluator = seal.Evaluator(context);
+  const compression = getComprModeType(compressionMode, seal);
+  return {
+    seal,
+    compression,
+    context,
+    encoder,
+    evaluator
+  };
+}
+
+function getSecurityLevel(securityLevel, {
+  SecurityLevel
+}) {
+  switch (securityLevel) {
+    case 128:
+      return SecurityLevel.tc128;
+
+    case 192:
+      return SecurityLevel.tc192;
+
+    case 256:
+      return SecurityLevel.tc256;
+
+    default:
+      return SecurityLevel.tc128;
+  }
 }
 
 function getComprModeType(compression, {
@@ -72,48 +117,4 @@ function getComprModeType(compression, {
     default:
       return ComprModeType.zstd;
   }
-}
-
-async function createClientHEContext(polyModulusDegree, plainModulus, compressionMode) {
-  const [morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
-  const encoder = morfix.BatchEncoder(context);
-  const keyGenerator = morfix.KeyGenerator(context);
-  const publicKey = keyGenerator.createPublicKey();
-  const secretKey = keyGenerator.secretKey(); // Use the `createGaloisKeysSerializable` function which generates a `Serializable` object
-  // ready to be serialized. The benefit is about a 50% reduction in size,
-  // but you cannot perform any HE operations until it is deserialized into
-  // a proper GaloisKeys instance.
-
-  const galoisKeys = keyGenerator.createGaloisKeysSerializable();
-  const encryptor = morfix.Encryptor(context, publicKey);
-  const decryptor = morfix.Decryptor(context, secretKey);
-  const evaluator = morfix.Evaluator(context);
-  const compression = getComprModeType(compressionMode, morfix);
-  return {
-    morfix,
-    compression,
-    context,
-    encoder,
-    keyGenerator,
-    publicKey,
-    secretKey,
-    galoisKeys,
-    encryptor,
-    decryptor,
-    evaluator
-  };
-}
-
-async function createServerHEContext(polyModulusDegree, plainModulus, compressionMode) {
-  const [morfix, context] = await createHEContext(polyModulusDegree, plainModulus);
-  const encoder = morfix.BatchEncoder(context);
-  const evaluator = morfix.Evaluator(context);
-  const compression = getComprModeType(compressionMode, morfix);
-  return {
-    morfix,
-    compression,
-    context,
-    encoder,
-    evaluator
-  };
 }
