@@ -41,7 +41,7 @@ The plaintext modulus can be set arbitrarily. However, applications in the past,
 For users who don't know how to choose the parameters, I recommend using 4096 as the polymodulus degree and 20 as the
 plaintext modulus. If the noise budget gets consumed, try using the next higher polymodulus degree.
 
-**Note:** The application may run out of memory with a polymodulus degree of 16384. A solution could to specify a
+**Note:** The application may run out of memory with a polymodulus degree of 16384. A solution could be to specify a
 different compression mode such as 'none' or the slower 'zlib' over the default 'zstd'. In addition, you may need to
 increase the JavaScript heap size by adding `--max-old-space-size=4096` for NodeJS.
 
