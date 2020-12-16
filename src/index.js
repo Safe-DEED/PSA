@@ -230,6 +230,7 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
   }, serverContext); // Clean up WASM instances
 
   input.forEach(x => x.delete());
+  serverContext.galois.delete();
   return output.map(item => {
     const serialized = item.save(serverContext.compression);
     item.delete();
