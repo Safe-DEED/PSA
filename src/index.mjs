@@ -212,13 +212,11 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
     { N, k, bsgsN1, bsgsN2 },
     serverContext
   )
-  // cleanup
+  const serialized = output.map(item => item.save(serverContext.compression))
+  // Clean up WASM instances
   input.forEach(x => x.delete())
-  return output.map(item => {
-    const serialized = item.save(serverContext.compression)
-    item.delete()
-    return serialized
-  })
+  output.forEach(x => x.delete())
+  return serialized
 }
 
 /**
@@ -254,6 +252,7 @@ function computeWithClientRequestObject(
  * @param {Object} options
  * @param {Object} options.compression
  * @param {Object} options.galoisKeys
+ * @returns {string}
  */
 function getClientRequestObject(encryptedArray, { compression, galoisKeys }) {
   const galois = galoisKeys.save(compression)

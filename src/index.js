@@ -227,14 +227,12 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
     k,
     bsgsN1,
     bsgsN2
-  }, serverContext); // cleanup
+  }, serverContext);
+  const serialized = output.map(item => item.save(serverContext.compression)); // Clean up WASM instances
 
   input.forEach(x => x.delete());
-  return output.map(item => {
-    const serialized = item.save(serverContext.compression);
-    item.delete();
-    return serialized;
-  });
+  output.forEach(x => x.delete());
+  return serialized;
 }
 /**
  * This function returns the serialized galois key needed for rotations of the ciphertext.
@@ -270,6 +268,7 @@ function computeWithClientRequestObject(clientRequestObject, matrix, serverConte
  * @param {Object} options
  * @param {Object} options.compression
  * @param {Object} options.galoisKeys
+ * @returns {string}
  */
 
 
