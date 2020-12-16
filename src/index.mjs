@@ -212,11 +212,13 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
     { N, k, bsgsN1, bsgsN2 },
     serverContext
   )
-  const serialized = output.map(item => item.save(serverContext.compression))
   // Clean up WASM instances
   input.forEach(x => x.delete())
-  output.forEach(x => x.delete())
-  return serialized
+  return output.map(item => {
+    const serialized = item.save(serverContext.compression)
+    item.delete()
+    return serialized
+  })
 }
 
 /**
