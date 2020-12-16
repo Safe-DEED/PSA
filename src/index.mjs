@@ -243,8 +243,13 @@ function computeWithClientRequestObject(
   matrix,
   serverContext
 ) {
-  const { arr, galois } = JSON.parse(clientRequestObject)
-  const computationResult = compute(arr, galois, matrix, serverContext)
+  const { encryptedArray, galois } = JSON.parse(clientRequestObject)
+  const computationResult = compute(
+    encryptedArray,
+    galois,
+    matrix,
+    serverContext
+  )
   return getServerResponseObject(computationResult)
 }
 
@@ -258,7 +263,7 @@ function computeWithClientRequestObject(
  */
 function getClientRequestObject(encryptedArray, { compression, galoisKeys }) {
   const galois = galoisKeys.save(compression)
-  return JSON.stringify({ arr: encryptedArray, galois })
+  return JSON.stringify({ encryptedArray, galois })
 }
 
 /**

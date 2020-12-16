@@ -258,10 +258,10 @@ function getSerializedGaloisKeys(clientContext) {
 
 function computeWithClientRequestObject(clientRequestObject, matrix, serverContext) {
   const {
-    arr,
+    encryptedArray,
     galois
   } = JSON.parse(clientRequestObject);
-  const computationResult = compute(arr, galois, matrix, serverContext);
+  const computationResult = compute(encryptedArray, galois, matrix, serverContext);
   return getServerResponseObject(computationResult);
 }
 /**
@@ -280,7 +280,7 @@ function getClientRequestObject(encryptedArray, {
 }) {
   const galois = galoisKeys.save(compression);
   return JSON.stringify({
-    arr: encryptedArray,
+    encryptedArray,
     galois
   });
 }
