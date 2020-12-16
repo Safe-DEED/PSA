@@ -1,5 +1,12 @@
 import SEAL from 'node-seal/allows_wasm_node_umd'
 
+/**
+ * Creates a SEAL context
+ * @param {number} polyModulusDegree
+ * @param {number} securityLevel
+ * @param {number} plainModulusBitSize
+ * @returns {Promise<[Object, Object]>}
+ */
 async function createHEContext(
   polyModulusDegree,
   securityLevel,
@@ -45,6 +52,14 @@ async function createHEContext(
   return [seal, context]
 }
 
+/**
+ * Create a client context
+ * @param {number} polyModulusDegree
+ * @param {number} plainModulus
+ * @param {number} securityLevel
+ * @param {string} compressionMode
+ * @returns {Promise<Object>}
+ */
 export async function createClientHEContext(
   polyModulusDegree,
   plainModulus,
@@ -86,6 +101,14 @@ export async function createClientHEContext(
   }
 }
 
+/**
+ * Create a server context
+ * @param {number} polyModulusDegree
+ * @param {number} plainModulus
+ * @param {number} securityLevel
+ * @param {string} compressionMode
+ * @returns {Promise<Object>}
+ */
 export async function createServerHEContext(
   polyModulusDegree,
   plainModulus,
@@ -104,6 +127,13 @@ export async function createServerHEContext(
   return { seal, compression, context, encoder, evaluator }
 }
 
+/**
+ * Gets the SEAL security enum from a number mapping
+ * @param {number} securityLevel
+ * @param {Object} options
+ * @param {Object} options.SecurityLevel
+ * @returns {Object}
+ */
 function getSecurityLevel(securityLevel, { SecurityLevel }) {
   switch (securityLevel) {
     case 128:
@@ -117,6 +147,13 @@ function getSecurityLevel(securityLevel, { SecurityLevel }) {
   }
 }
 
+/**
+ * Gets the SEAL compression enum from a string mapping
+ * @param {string} compression
+ * @param {Object} options
+ * @param {Object} options.ComprModeType
+ * @returns {Object}
+ */
 function getComprModeType(compression, { ComprModeType }) {
   switch (compression) {
     case 'none':

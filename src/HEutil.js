@@ -10,6 +10,13 @@ var _allows_wasm_node_umd = _interopRequireDefault(require("node-seal/allows_was
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Creates a SEAL context
+ * @param {number} polyModulusDegree
+ * @param {number} securityLevel
+ * @param {number} plainModulusBitSize
+ * @returns {Promise<[Object, Object]>}
+ */
 async function createHEContext(polyModulusDegree, securityLevel, plainModulusBitSize) {
   const seal = await (0, _allows_wasm_node_umd.default)();
   const schemeType = seal.SchemeType.bfv;
@@ -38,6 +45,15 @@ async function createHEContext(polyModulusDegree, securityLevel, plainModulusBit
 
   return [seal, context];
 }
+/**
+ * Create a client context
+ * @param {number} polyModulusDegree
+ * @param {number} plainModulus
+ * @param {number} securityLevel
+ * @param {string} compressionMode
+ * @returns {Promise<Object>}
+ */
+
 
 async function createClientHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode) {
   const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
@@ -68,6 +84,15 @@ async function createClientHEContext(polyModulusDegree, plainModulus, securityLe
     evaluator
   };
 }
+/**
+ * Create a server context
+ * @param {number} polyModulusDegree
+ * @param {number} plainModulus
+ * @param {number} securityLevel
+ * @param {string} compressionMode
+ * @returns {Promise<Object>}
+ */
+
 
 async function createServerHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode) {
   const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
@@ -82,6 +107,14 @@ async function createServerHEContext(polyModulusDegree, plainModulus, securityLe
     evaluator
   };
 }
+/**
+ * Gets the SEAL security enum from a number mapping
+ * @param {number} securityLevel
+ * @param {Object} options
+ * @param {Object} options.SecurityLevel
+ * @returns {Object}
+ */
+
 
 function getSecurityLevel(securityLevel, {
   SecurityLevel
@@ -100,6 +133,14 @@ function getSecurityLevel(securityLevel, {
       return SecurityLevel.tc128;
   }
 }
+/**
+ * Gets the SEAL compression enum from a string mapping
+ * @param {string} compression
+ * @param {Object} options
+ * @param {Object} options.ComprModeType
+ * @returns {Object}
+ */
+
 
 function getComprModeType(compression, {
   ComprModeType
