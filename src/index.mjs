@@ -86,7 +86,7 @@ function getNumberOfInnerArrays(numberOfIdentities, slotCount) {
  * This function encrypts the client's input vector and returns an array of ciphertexts.
  * @param {number[]} inputArray 1D array of numbers
  * @param {Object} clientContext client side context
- * @returns {string[]} an array of ciphertexts
+ * @returns {string[]} an array of serialized ciphertexts
  */
 function encrypt(inputArray, { compression, encoder, encryptor }) {
   const numInnerArrays = getNumberOfInnerArrays(
