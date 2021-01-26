@@ -51,11 +51,12 @@ async function createHEContext(polyModulusDegree, securityLevel, plainModulusBit
  * @param {number} plainModulus
  * @param {number} securityLevel
  * @param {string} compressionMode
+ * @param {Int32Array} galoisSteps
  * @returns {Promise<Object>}
  */
 
 
-async function createClientHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode) {
+async function createClientHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode, galoisSteps) {
   const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
   const encoder = seal.BatchEncoder(context);
   const keyGenerator = seal.KeyGenerator(context);
@@ -65,7 +66,8 @@ async function createClientHEContext(polyModulusDegree, plainModulus, securityLe
   // but you cannot perform any HE operations until it is deserialized into
   // a proper GaloisKeys instance.
 
-  const galoisKeys = keyGenerator.createGaloisKeysSerializable();
+  const galoisKeys = keyGenerator.createGaloisKeysSerializable(galoisSteps);
+  const relinKeys = keyGenerator.createRelinKeysSerializable();
   const encryptor = seal.Encryptor(context, publicKey);
   const decryptor = seal.Decryptor(context, secretKey);
   const evaluator = seal.Evaluator(context);
@@ -79,6 +81,7 @@ async function createClientHEContext(polyModulusDegree, plainModulus, securityLe
     publicKey,
     secretKey,
     galoisKeys,
+    relinKeys,
     encryptor,
     decryptor,
     evaluator

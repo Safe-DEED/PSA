@@ -58,33 +58,36 @@ async function createHEContext(
  * @param {number} plainModulus
  * @param {number} securityLevel
  * @param {string} compressionMode
+ * @param {Int32Array} galoisSteps
  * @returns {Promise<Object>}
  */
 export async function createClientHEContext(
   polyModulusDegree,
   plainModulus,
   securityLevel,
-  compressionMode
+  compressionMode,
+  galoisSteps
 ) {
   const [seal, context] = await createHEContext(
     polyModulusDegree,
     securityLevel,
     plainModulus
-  )
+  );
 
-  const encoder = seal.BatchEncoder(context)
-  const keyGenerator = seal.KeyGenerator(context)
-  const publicKey = keyGenerator.createPublicKey()
-  const secretKey = keyGenerator.secretKey()
+  const encoder = seal.BatchEncoder(context);
+  const keyGenerator = seal.KeyGenerator(context);
+  const publicKey = keyGenerator.createPublicKey();
+  const secretKey = keyGenerator.secretKey();
   // Use the `createGaloisKeysSerializable` function which generates a `Serializable` object
   // ready to be serialized. The benefit is about a 50% reduction in size,
   // but you cannot perform any HE operations until it is deserialized into
   // a proper GaloisKeys instance.
-  const galoisKeys = keyGenerator.createGaloisKeysSerializable()
-  const encryptor = seal.Encryptor(context, publicKey)
-  const decryptor = seal.Decryptor(context, secretKey)
-  const evaluator = seal.Evaluator(context)
-  const compression = getComprModeType(compressionMode, seal)
+  const galoisKeys = keyGenerator.createGaloisKeysSerializable(galoisSteps);
+  const relinKeys = keyGenerator.createRelinKeysSerializable();
+  const encryptor = seal.Encryptor(context, publicKey);
+  const decryptor = seal.Decryptor(context, secretKey);
+  const evaluator = seal.Evaluator(context);
+  const compression = getComprModeType(compressionMode, seal);
 
   return {
     seal,
@@ -95,6 +98,7 @@ export async function createClientHEContext(
     publicKey,
     secretKey,
     galoisKeys,
+    relinKeys,
     encryptor,
     decryptor,
     evaluator
@@ -113,7 +117,7 @@ export async function createServerHEContext(
   polyModulusDegree,
   plainModulus,
   securityLevel,
-  compressionMode
+  compressionMode,
 ) {
   const [seal, context] = await createHEContext(
     polyModulusDegree,

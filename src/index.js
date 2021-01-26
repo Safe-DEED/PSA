@@ -9,21 +9,27 @@ var _HEutil = require("./HEutil");
 
 var _MatMul = require("./MatMul");
 
+var _crypto = _interopRequireDefault(require("crypto"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 /**
  * This asynchronous function return the client context object.
  * @param {number} polyModulusDegree the polymodulus degree
  * @param {number} plainModulusBitSize the bit size of the plaintext modulus prime that will be generated
  * @param {(128|192|256)} [securityLevel=128] the security level in bits (default = 128)
  * @param {('none'|'zlib'|'zstd')} [compressionMode='zstd'] Optional compression mode for serialization (default = zstd)
+ * @param {Int32Array} galoisSteps
  * @returns {Object} a context object necessary for client side actions
  */
 async function getClientContext({
   polyModulusDegree,
   plainModulusBitSize,
   securityLevel = 128,
-  compressionMode = 'zstd'
+  compressionMode = 'zstd',
+  galoisSteps
 }) {
-  return await (0, _HEutil.createClientHEContext)(polyModulusDegree, plainModulusBitSize, securityLevel, compressionMode);
+  return await (0, _HEutil.createClientHEContext)(polyModulusDegree, plainModulusBitSize, securityLevel, compressionMode, galoisSteps);
 }
 /**
  * This asynchronous function return the server context object.
@@ -46,14 +52,15 @@ async function getServerContext({
 /**
  * Generate a zero-filled BigUint64Array
  * @param {number} length The size of the array
+ * @param {number} value to be used to fill the array with
  * @returns {BigUint64Array}
  */
 
 
-function getZeroFilledBigUint64Array(length) {
+function getFilledBigUint64Array(length, value) {
   return BigUint64Array.from({
     length
-  }, _ => BigInt(0));
+  }, _ => BigInt(value));
 }
 /**
  * Get the special format for the indices
@@ -68,7 +75,7 @@ function getSpecialFormatIndicesVector(numInnerArrays, slotCount, vec) {
   const numberIndices = [];
 
   for (let i = 0; i < numInnerArrays; ++i) {
-    const inner_array = getZeroFilledBigUint64Array(slotCount);
+    const inner_array = getFilledBigUint64Array(slotCount, 0);
     const currentOffset = i * slotCount;
 
     for (let innerI = 0; innerI < slotCount; ++innerI) {
@@ -123,14 +130,15 @@ function encrypt(inputArray, {
 /**
  * This function encrypts the client's input vector and returns an object ready to be sent to the server.
  * @param {number[]} inputArray 1D array of numbers
+ * @param {number} w the hamming weight of the input vector
  * @param {Object} clientContext client side context
  * @returns {string} JSON to be sent to server without further processing
  */
 
 
-function encryptForClientRequest(inputArray, clientContext) {
+function encryptForClientRequest(inputArray, hw, clientContext) {
   const encryptedArray = encrypt(inputArray, clientContext);
-  return getClientRequestObject(encryptedArray, clientContext);
+  return getClientRequestObject(encryptedArray, hw, clientContext);
 }
 /**
  * Get the relevant parts from the input array
@@ -205,15 +213,13 @@ function decryptServerResponseObject(serverResponseObject, clientContext) {
  */
 
 
-function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
+function compute(encryptedArray, mask, serializedGaloisKeys, matrix, serverContext) {
   const {
     seal,
     context,
-    encoder
+    encoder,
+    evaluator
   } = serverContext;
-  const galoisKeys = seal.GaloisKeys();
-  galoisKeys.load(context, serializedGaloisKeys);
-  serverContext.galois = galoisKeys;
   const input = encryptedArray.map(inpt => {
     const cipherText = seal.CipherText();
     cipherText.load(context, inpt);
@@ -227,7 +233,14 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
     k,
     bsgsN1,
     bsgsN2
-  }, serverContext); // Clean up WASM instances
+  }, serverContext); //apply mask
+
+  const numCipherTexts = Math.ceil(2 * k / encoder.slotCount);
+
+  for (let i = 0; i < numCipherTexts; ++i) {
+    evaluator.add(output[i], mask[i], output[i]);
+  } // Clean up WASM instances
+
 
   input.forEach(x => x.delete());
   serverContext.galois.delete();
@@ -246,6 +259,257 @@ function compute(encryptedArray, serializedGaloisKeys, matrix, serverContext) {
 
 function getSerializedGaloisKeys(clientContext) {
   return clientContext.galoisKeys.save(clientContext.compression);
+} //same as dot product with one dot1
+
+
+function sumElements(input, serverContext) {
+  const seal = serverContext.seal;
+  const evaluator = serverContext.evaluator;
+  const encoder = serverContext.encoder;
+  const slotCount = encoder.slotCount;
+  const galoisKeys = serverContext.galoisKeys;
+  const rotated = seal.CipherText();
+  let rotIndex = 1;
+
+  while (rotIndex < slotCount >> 1) {
+    evaluator.rotateRows(input, rotIndex, galoisKeys, rotated);
+    evaluator.add(input, rotated, input);
+    rotIndex *= 2;
+  }
+
+  evaluator.rotateColumns(input, galoisKeys, rotated);
+  evaluator.add(input, rotated, input); //return ciphertext
+}
+
+function computeMaskHW(arrayOfCiphertexts, hw, serverContext) {
+  const seal = serverContext.seal;
+  const evaluator = serverContext.evaluator;
+  const encoder = serverContext.encoder;
+  const galoisKeys = serverContext.galois;
+  const W = seal.PlainText();
+  const bigUintArrayFilledWithHW = new BigUint64Array(encoder.slotCount).fill(BigInt(hw));
+  encoder.encode(bigUintArrayFilledWithHW, W);
+  let tmp = [];
+  arrayOfCiphertexts.forEach(ciphertext => {
+    tmp.push(evaluator.sumElements(ciphertext, galoisKeys, seal.SchemeType.bfv));
+  });
+  const mask = seal.CipherText();
+  mask.copy(tmp[0]);
+
+  for (let i = 1; i < arrayOfCiphertexts.length; i++) {
+    evaluator.add(tmp[i], mask, mask);
+    tmp[i].delete();
+  }
+
+  tmp[0].delete();
+  evaluator.subPlain(mask, W, mask);
+  W.delete();
+  return mask;
+}
+
+function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
+  const seal = serverContext.seal;
+  const evaluator = serverContext.evaluator;
+  const encoder = serverContext.encoder;
+  const slotCount = encoder.slotCount;
+  const galoisKeys = serverContext.galois;
+  const plainModulusBigInt = getPlainModulusFromContext(serverContext.context).value;
+  const y = getRandomFieldElementWithout0(serverContext);
+  const r = getRandomFieldElementWithout0(serverContext); // y vector
+
+  const yEnc = [];
+  let startVal = r;
+
+  for (let j = 0; j < arrayOfCipherTexts.length; ++j) {
+    const yDecode = new BigUint64Array(slotCount).fill(startVal);
+
+    for (let i = 1; i < slotCount; i++) {
+      const tmp = yDecode[i - 1] * y % plainModulusBigInt;
+      yDecode[i] = tmp;
+    }
+
+    const tmp = yDecode[slotCount - 1] * y % plainModulusBigInt;
+    startVal = tmp;
+    yEnc.push(encoder.encode(yDecode));
+  } // d*y
+
+
+  const dy = [];
+
+  for (let i = 0; i < arrayOfCipherTexts.length; ++i) {
+    dy.push(evaluator.multiplyPlain(d[i], yEnc[i]));
+  }
+
+  for (let i = 0; i < arrayOfCipherTexts.length; ++i) {
+    dot(arrayOfCipherTexts[i], dy[i], serverContext);
+  }
+
+  const mask = seal.CipherText();
+  mask.copy(dy[0]);
+
+  for (let i = 1; i < arrayOfCipherTexts.length; i++) {
+    evaluator.add(dy[i], mask, mask);
+    dy[i].delete();
+  }
+
+  dy[0].delete();
+  return mask;
+}
+
+function dot(in1, inOut, serverContext) {
+  const evaluator = serverContext.evaluator;
+  const relin = serverContext.relin;
+  const galois = serverContext.galois;
+  const seal = serverContext.seal;
+  evaluator.multiply(in1, inOut, inOut);
+  evaluator.relinearize(inOut, relin, inOut);
+  evaluator.sumElements(inOut, galois, seal.SchemeType.bfv, inOut);
+}
+
+function computeMaskBin(arrayOfCipherTexts, d, serverContext) {
+  const seal = serverContext.seal;
+  const evaluator = serverContext.evaluator;
+  const encoder = serverContext.encoder;
+  const galoisKeys = serverContext.galois;
+  const mask = computePartBinMask(arrayOfCipherTexts, d, serverContext);
+  const mask1 = computePartBinMask(arrayOfCipherTexts, d, serverContext);
+  evaluator.add(mask, mask1, mask);
+  mask1.delete();
+  return mask;
+}
+
+function subtractOne(arrayOfCiphertexts, {
+  seal,
+  evaluator,
+  encoder
+}) {
+  const slotCount = encoder.slotCount;
+  const one = seal.PlainText();
+  const result = [];
+  encoder.encode(getFilledBigUint64Array(slotCount, 1), one);
+  arrayOfCiphertexts.forEach(cipherText => {
+    const cipherTextTmp = seal.CipherText();
+    evaluator.subPlain(cipherText, one, cipherTextTmp);
+    result.push(cipherTextTmp);
+  });
+  one.delete();
+  return result;
+}
+
+function getPlainModulusFromContext(context) {
+  return context.keyContextData.parms.plainModulus;
+} //since PSA lib works in browser and node environment, it has to check the environment
+
+
+function isNodeEnvironment() {
+  let isNode = false;
+
+  if (typeof process === 'object') {
+    if (typeof process.versions === 'object') {
+      if (typeof process.versions.node !== 'undefined') {
+        isNode = true;
+      }
+    }
+  }
+
+  return isNode;
+}
+
+function getRandom64BitBigInt() {
+  if (isNodeEnvironment()) {
+    return getRandom64BitBigIntNode();
+  } else {
+    return getRandom64BitBigIntBrowser();
+  }
+}
+
+function getRandom64BitBigIntNode() {
+  const buf = _crypto.default.randomBytes(256);
+
+  return buf.readBigUInt64LE();
+}
+
+function getRandom64BitBigIntBrowser() {
+  const randomBytes = _crypto.default.getRandomValues(new Uint8Array(8));
+
+  const hex = [];
+  randomBytes.forEach(function (i) {
+    let h = i.toString(16);
+
+    if (h.length % 2) {
+      h = '0' + h;
+    }
+
+    hex.push(h);
+  });
+  return BigInt('0x' + hex.join(''));
+}
+
+function getRandomFieldElement({
+  context
+}) {
+  const plainModulus = getPlainModulusFromContext(context);
+  const modulusValueAsBigInt = plainModulus.value;
+  const bitMask = BigInt((1 << plainModulus.bitCount) - 1);
+  let random64BitBigInt = getRandom64BitBigInt();
+  let randomFieldElement = random64BitBigInt & bitMask;
+
+  while (randomFieldElement >= modulusValueAsBigInt) {
+    random64BitBigInt = getRandom64BitBigInt();
+    randomFieldElement = random64BitBigInt & bitMask;
+  }
+
+  return randomFieldElement;
+}
+
+function getRandomFieldElementWithout0(serverContext) {
+  while (1) {
+    const element = getRandomFieldElement(serverContext);
+
+    if (element) {
+      return element;
+    }
+  }
+}
+
+function computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext) {
+  const seal = serverContext.seal;
+  const encoder = serverContext.encoder;
+  const slotCount = encoder.slotCount;
+  const evaluator = serverContext.evaluator;
+  let d = subtractOne(arrayOfCiphertexts, serverContext);
+  const maskHW = computeMaskHW(arrayOfCiphertexts, hw, serverContext);
+  const z = getRandomFieldElement(serverContext);
+  const Z = seal.PlainText();
+  const bigUintArrayFilledWithZ = new BigUint64Array(encoder.slotCount).fill(z);
+  encoder.encode(bigUintArrayFilledWithZ, Z);
+  evaluator.multiplyPlain(maskHW, Z, maskHW);
+  const maskBin = computeMaskBin(arrayOfCiphertexts, d, serverContext); //final add
+
+  evaluator.add(maskHW, maskBin, maskHW);
+  maskBin.delete(); //r vec
+
+  const rEnc = [];
+
+  for (let i = 0; i < numCipherTexts; ++i) {
+    let rDecode = new BigUint64Array(slotCount);
+
+    for (let j = 0; j < slotCount; ++j) {
+      rDecode[j] = getRandomFieldElementWithout0(serverContext);
+    }
+
+    rEnc.push(encoder.encode(rDecode));
+  } //randomizing scalar mask
+
+
+  const mask = [];
+
+  for (let i = 0; i < numCipherTexts; ++i) {
+    mask.push(evaluator.multiplyPlain(maskHW, rEnc[i]));
+  }
+
+  maskHW.delete();
+  return mask;
 }
 /**
  * This function computes the dot product between the encrypted client vector and the server matrix.
@@ -258,16 +522,41 @@ function getSerializedGaloisKeys(clientContext) {
 
 
 function computeWithClientRequestObject(clientRequestObject, matrix, serverContext) {
+  const seal = serverContext.seal;
+  const encoder = serverContext.encoder;
+  const evaluator = serverContext.evaluator;
+  const slotCount = encoder.slotCount;
+  const context = serverContext.context;
   const {
-    encryptedArray,
-    galois
+    encryptedArray: arrayOfBase64EncodedCiphertexts,
+    hw,
+    galois,
+    relin
   } = JSON.parse(clientRequestObject);
-  const computationResult = compute(encryptedArray, galois, matrix, serverContext);
+  const galoisKeys = seal.GaloisKeys();
+  galoisKeys.load(context, galois);
+  serverContext.galois = galoisKeys;
+  const relinKeys = seal.RelinKeys();
+  relinKeys.load(context, relin);
+  serverContext.relin = relinKeys; //masking
+
+  const arrayOfCiphertexts = [];
+  arrayOfBase64EncodedCiphertexts.forEach(base64encodedCipherText => {
+    const cipherText = serverContext.seal.CipherText();
+    cipherText.load(serverContext.context, base64encodedCipherText);
+    arrayOfCiphertexts.push(cipherText);
+  });
+  const k = matrix[0].length;
+  const numCipherTexts = Math.ceil(2 * k / slotCount);
+  const mask = computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext); //base64encode again here !!!
+
+  const computationResult = compute(arrayOfBase64EncodedCiphertexts, mask, galois, matrix, serverContext);
   return getServerResponseObject(computationResult);
 }
 /**
  *
  * @param {string[]} encryptedArray
+ * @param {number} hw
  * @param {Object} options
  * @param {Object} options.compression
  * @param {Object} options.galoisKeys
@@ -275,14 +564,18 @@ function computeWithClientRequestObject(clientRequestObject, matrix, serverConte
  */
 
 
-function getClientRequestObject(encryptedArray, {
+function getClientRequestObject(encryptedArray, hw, {
   compression,
-  galoisKeys
+  galoisKeys,
+  relinKeys
 }) {
   const galois = galoisKeys.save(compression);
+  const relin = relinKeys.save(compression);
   return JSON.stringify({
     encryptedArray,
-    galois
+    hw,
+    galois,
+    relin
   });
 }
 /**

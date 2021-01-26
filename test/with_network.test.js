@@ -5,7 +5,7 @@ describe('an psa lib', () => {
     'with networking object (compression: %s)',
     async compressionMode => {
       const polyModulusDegree = 4096
-      const plainModulusBitSize = 20
+      const plainModulusBitSize = 16
 
       const clientContext = await PSA.getClientContext({
         polyModulusDegree,
@@ -39,8 +39,8 @@ describe('an psa lib', () => {
             [72], [73], [74], [75], [76], [77], [78], [79], [80], [81], [82], [83], [84], [85], [86], [87], [88], [89],
             [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
-      const clientRequest = PSA.encryptForClientRequest(array, clientContext)
-
+      const hw = array.reduce((a, b) => a+b, 0);
+      const clientRequest = PSA.encryptForClientRequest(array, hw, clientContext)
       const serverResponse = PSA.computeWithClientRequestObject(
         clientRequest,
         matrix,
@@ -55,7 +55,7 @@ describe('an psa lib', () => {
         const noiseBudget = clientContext.decryptor.invariantNoiseBudget(
           cipherText
         )
-        // console.log('noise budget: ' + noiseBudget)
+        console.log('noise budget: ' + noiseBudget)
         if (noiseBudget <= 0) {
           throw new Error('noise budget consumed')
         }
