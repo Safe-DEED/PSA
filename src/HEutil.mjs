@@ -1,4 +1,5 @@
-import SEAL from 'node-seal/allows_wasm_node_umd'
+import SEAL from 'node-seal/allows_wasm_node_umd';
+import { getBsgsParams } from './MatMul';
 
 /**
  * Creates a SEAL context
@@ -12,44 +13,66 @@ async function createHEContext(
   securityLevel,
   plainModulusBitSize
 ) {
-  const seal = await SEAL()
+  const seal = await SEAL();
 
-  const schemeType = seal.SchemeType.bfv
-  const secLevel = getSecurityLevel(securityLevel, seal)
+  const schemeType = seal.SchemeType.bfv;
+  const secLevel = getSecurityLevel(securityLevel, seal);
 
-  const parms = seal.EncryptionParameters(schemeType)
+  const parms = seal.EncryptionParameters(schemeType);
 
   // Set the PolyModulusDegree
-  parms.setPolyModulusDegree(polyModulusDegree)
+  parms.setPolyModulusDegree(polyModulusDegree);
 
   // Create a suitable set of CoeffModulus primes.
   // We use the default helper
-  const coeffModulus = seal.CoeffModulus.BFVDefault(polyModulusDegree, secLevel)
-  parms.setCoeffModulus(coeffModulus)
-  coeffModulus.delete()
+  const coeffModulus = seal.CoeffModulus.BFVDefault(
+    polyModulusDegree,
+    secLevel
+  );
+  parms.setCoeffModulus(coeffModulus);
+  coeffModulus.delete();
 
   // Create and set the PlainModulus to a prime of bitSize
   const plainModulus = seal.PlainModulus.Batching(
     polyModulusDegree,
     plainModulusBitSize
-  )
-  parms.setPlainModulus(plainModulus)
-  plainModulus.delete()
+  );
+  parms.setPlainModulus(plainModulus);
+  plainModulus.delete();
 
   const context = seal.Context(
     parms, // Encryption Parameters
     true, // ExpandModChain
     secLevel // Enforce a security level
-  )
-  parms.delete()
+  );
+  parms.delete();
 
   if (!context.parametersSet()) {
     throw new Error(
       'Could not set the parameters in the given context. Please try different encryption parameters.'
-    )
+    );
   }
 
-  return [seal, context]
+  return [seal, context];
+}
+
+export function createGks(slotCount, masking = true) {
+  const gks = [0, 1];
+  const [bsgs1, bsgs2] = getBsgsParams(slotCount);
+
+  for (let l = 1; l < bsgs2; l++) {
+    gks.push(l * bsgs1);
+  }
+
+  if (masking) {
+    let rotIndex = 2;
+    while (rotIndex < slotCount >> 1) {
+      gks.push(rotIndex);
+      rotIndex *= 2;
+    }
+  }
+
+  return gks;
 }
 
 /**
@@ -58,15 +81,21 @@ async function createHEContext(
  * @param {number} plainModulus
  * @param {number} securityLevel
  * @param {string} compressionMode
- * @param {Int32Array} galoisSteps
+ * @param {boolean} maskHW
+ * @param {BigInt} minHW
+ * @param {boolean} maskBin
+ * @param {boolean} createGkIndices
  * @returns {Promise<Object>}
  */
-export async function createClientHEContext(
+export async function createClientContext(
   polyModulusDegree,
   plainModulus,
   securityLevel,
   compressionMode,
-  galoisSteps
+  maskHW,
+  minHW,
+  maskBin,
+  createGkIndices
 ) {
   const [seal, context] = await createHEContext(
     polyModulusDegree,
@@ -82,8 +111,14 @@ export async function createClientHEContext(
   // ready to be serialized. The benefit is about a 50% reduction in size,
   // but you cannot perform any HE operations until it is deserialized into
   // a proper GaloisKeys instance.
-  const galoisKeys = keyGenerator.createGaloisKeysSerializable(galoisSteps);
-  const relinKeys = keyGenerator.createRelinKeysSerializable();
+  let gks;
+  if (createGkIndices) {
+    gks = createGkIndices
+      ? Int32Array.from(createGks(encoder.slotCount, maskHW || maskBin))
+      : new Int32Array(0);
+  }
+  const galoisKeys = keyGenerator.createGaloisKeysSerializable(gks);
+  const relinKeys = maskBin ? keyGenerator.createRelinKeysSerializable() : null;
   const encryptor = seal.Encryptor(context, publicKey);
   const decryptor = seal.Decryptor(context, secretKey);
   const evaluator = seal.Evaluator(context);
@@ -101,8 +136,11 @@ export async function createClientHEContext(
     relinKeys,
     encryptor,
     decryptor,
-    evaluator
-  }
+    evaluator,
+    maskHW,
+    minHW,
+    maskBin
+  };
 }
 
 /**
@@ -111,24 +149,39 @@ export async function createClientHEContext(
  * @param {number} plainModulus
  * @param {number} securityLevel
  * @param {string} compressionMode
+ * @param {boolean}maskHW
+ * @param {BigInt} minHW
+ * @param {boolean}maskBin
  * @returns {Promise<Object>}
  */
-export async function createServerHEContext(
+export async function createServerContext(
   polyModulusDegree,
   plainModulus,
   securityLevel,
   compressionMode,
+  maskHW,
+  minHW,
+  maskBin
 ) {
   const [seal, context] = await createHEContext(
     polyModulusDegree,
     securityLevel,
     plainModulus
-  )
-  const encoder = seal.BatchEncoder(context)
-  const evaluator = seal.Evaluator(context)
-  const compression = getComprModeType(compressionMode, seal)
+  );
+  const encoder = seal.BatchEncoder(context);
+  const evaluator = seal.Evaluator(context);
+  const compression = getComprModeType(compressionMode, seal);
 
-  return { seal, compression, context, encoder, evaluator }
+  return {
+    seal,
+    compression,
+    context,
+    encoder,
+    evaluator,
+    maskHW,
+    minHW,
+    maskBin
+  };
 }
 
 /**
@@ -141,13 +194,13 @@ export async function createServerHEContext(
 function getSecurityLevel(securityLevel, { SecurityLevel }) {
   switch (securityLevel) {
     case 128:
-      return SecurityLevel.tc128
+      return SecurityLevel.tc128;
     case 192:
-      return SecurityLevel.tc192
+      return SecurityLevel.tc192;
     case 256:
-      return SecurityLevel.tc256
+      return SecurityLevel.tc256;
     default:
-      return SecurityLevel.tc128
+      return SecurityLevel.tc128;
   }
 }
 
@@ -158,15 +211,15 @@ function getSecurityLevel(securityLevel, { SecurityLevel }) {
  * @param {Object} options.ComprModeType
  * @returns {Object}
  */
-function getComprModeType(compression, { ComprModeType }) {
+export function getComprModeType(compression, { ComprModeType }) {
   switch (compression) {
     case 'none':
-      return ComprModeType.none
+      return ComprModeType.none;
     case 'zlib':
-      return ComprModeType.zlib
+      return ComprModeType.zlib;
     case 'zstd':
-      return ComprModeType.zstd
+      return ComprModeType.zstd;
     default:
-      return ComprModeType.zstd
+      return ComprModeType.zstd;
   }
 }

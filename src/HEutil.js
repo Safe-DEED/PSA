@@ -3,10 +3,14 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createClientHEContext = createClientHEContext;
-exports.createServerHEContext = createServerHEContext;
+exports.createGks = createGks;
+exports.createClientContext = createClientContext;
+exports.createServerContext = createServerContext;
+exports.getComprModeType = getComprModeType;
 
 var _allows_wasm_node_umd = _interopRequireDefault(require("node-seal/allows_wasm_node_umd"));
+
+var _MatMul = require("./MatMul");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -45,18 +49,41 @@ async function createHEContext(polyModulusDegree, securityLevel, plainModulusBit
 
   return [seal, context];
 }
+
+function createGks(slotCount, masking = true) {
+  const gks = [0, 1];
+  const [bsgs1, bsgs2] = (0, _MatMul.getBsgsParams)(slotCount);
+
+  for (let l = 1; l < bsgs2; l++) {
+    gks.push(l * bsgs1);
+  }
+
+  if (masking) {
+    let rotIndex = 2;
+
+    while (rotIndex < slotCount >> 1) {
+      gks.push(rotIndex);
+      rotIndex *= 2;
+    }
+  }
+
+  return gks;
+}
 /**
  * Create a client context
  * @param {number} polyModulusDegree
  * @param {number} plainModulus
  * @param {number} securityLevel
  * @param {string} compressionMode
- * @param {Int32Array} galoisSteps
+ * @param {boolean} maskHW
+ * @param {BigInt} minHW
+ * @param {boolean} maskBin
+ * @param {boolean} createGkIndices
  * @returns {Promise<Object>}
  */
 
 
-async function createClientHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode, galoisSteps) {
+async function createClientContext(polyModulusDegree, plainModulus, securityLevel, compressionMode, maskHW, minHW, maskBin, createGkIndices) {
   const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
   const encoder = seal.BatchEncoder(context);
   const keyGenerator = seal.KeyGenerator(context);
@@ -66,8 +93,14 @@ async function createClientHEContext(polyModulusDegree, plainModulus, securityLe
   // but you cannot perform any HE operations until it is deserialized into
   // a proper GaloisKeys instance.
 
-  const galoisKeys = keyGenerator.createGaloisKeysSerializable(galoisSteps);
-  const relinKeys = keyGenerator.createRelinKeysSerializable();
+  let gks;
+
+  if (createGkIndices) {
+    gks = createGkIndices ? Int32Array.from(createGks(encoder.slotCount, maskHW || maskBin)) : new Int32Array(0);
+  }
+
+  const galoisKeys = keyGenerator.createGaloisKeysSerializable(gks);
+  const relinKeys = maskBin ? keyGenerator.createRelinKeysSerializable() : null;
   const encryptor = seal.Encryptor(context, publicKey);
   const decryptor = seal.Decryptor(context, secretKey);
   const evaluator = seal.Evaluator(context);
@@ -84,7 +117,10 @@ async function createClientHEContext(polyModulusDegree, plainModulus, securityLe
     relinKeys,
     encryptor,
     decryptor,
-    evaluator
+    evaluator,
+    maskHW,
+    minHW,
+    maskBin
   };
 }
 /**
@@ -93,11 +129,14 @@ async function createClientHEContext(polyModulusDegree, plainModulus, securityLe
  * @param {number} plainModulus
  * @param {number} securityLevel
  * @param {string} compressionMode
+ * @param {boolean}maskHW
+ * @param {BigInt} minHW
+ * @param {boolean}maskBin
  * @returns {Promise<Object>}
  */
 
 
-async function createServerHEContext(polyModulusDegree, plainModulus, securityLevel, compressionMode) {
+async function createServerContext(polyModulusDegree, plainModulus, securityLevel, compressionMode, maskHW, minHW, maskBin) {
   const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
   const encoder = seal.BatchEncoder(context);
   const evaluator = seal.Evaluator(context);
@@ -107,7 +146,10 @@ async function createServerHEContext(polyModulusDegree, plainModulus, securityLe
     compression,
     context,
     encoder,
-    evaluator
+    evaluator,
+    maskHW,
+    minHW,
+    maskBin
   };
 }
 /**

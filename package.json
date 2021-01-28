@@ -5,7 +5,9 @@
   "main": "src/index",
   "scripts": {
     "build": "babel src/*.mjs **/*.mjs --out-dir ./src",
-    "test": "jest"
+    "test": "jest ",
+    "format": "prettier --write .",
+    "docs": "documentation readme src/index.mjs -f md --section='API docs' --shallow"
   },
   "author": {
     "name": "Alexander Grass",
@@ -27,6 +29,8 @@
     "@babel/preset-env": "^7.12.1",
     "babel-jest": "^26.6.0",
     "babel-plugin-add-module-exports": "^1.0.4",
-    "jest": "^26.6.0"
+    "documentation": "^13.1.1",
+    "jest": "^26.6.0",
+    "prettier": "2.2.1"
   }
 }

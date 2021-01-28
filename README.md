@@ -27,23 +27,56 @@ for CommonJS or ES Modules syntax, respectively.
 
 ### Usage
 
-When retrieving the context with either getClientContext or getServerContext, one must provide the polymodulus degree
+When retrieving the context with either getClientContext or getServerContext, one should provide the polymodulus degree
 and the plaintext modulus.
 
 The polymodulus degree can be one of:
 
-- 4096
-- 8192
-- 16384
+-   4096
+-   8192
+-   16384
 
-The plaintext modulus can be set arbitrarily. However, applications in the past, using the library, were using 20 bit.
+The plaintext modulus can be set arbitrarily. However, applications in the past, using the library, were using 33 bit.
 
-For users who don't know how to choose the parameters, I recommend using 4096 as the polymodulus degree and 20 as the
+For users who don't know how to choose the parameters, we recommend using 8192 as the polymodulus degree and 33 as the
 plaintext modulus. If the noise budget gets consumed, try using the next higher polymodulus degree.
 
-**Note:** The application may run out of memory with a polymodulus degree of 16384. A solution could be to specify a
+**Note:** The application may run out of memory, depending on the polymodulus degree. A solution could be to specify a
 different compression mode such as 'none' or the slower 'zlib' over the default 'zstd'. In addition, you may need to
 increase the JavaScript heap size by adding `--max-old-space-size=4096` for NodeJS.
+
+### Masking
+
+The PSA library supports masking. A user can use Hamming weight masking, binary masking or both by specifying it in the
+getClientContext/getServerContext call in the beginning.
+
+### Caveats
+
+The library assumes that both parties agree on a set of parameters. The same parameters have to be passed into the
+getClientContext/getServerContext calls via a config object. A sample config object is provided here:
+
+    const psaConf = {
+      polyModulusDegree: 8192,
+      plainModulusBitSize: 33,
+      securityLevel: 128,
+      compression: 'zstd',
+      maskHW: true,
+      minHW: BigInt(100),
+      maskBin: true,
+      createGkIndices: true
+    };
+
+It does not pose a security risk if one party uses different parameters. However, system failures will occur.
+
+### Contributing
+
+We are happy to welcome everyone who is willing to contribute. The workflow is as follows:
+
+1.  Write your code in <filename>.mjs files
+2.  Transpile the files to CommonJS module syntax with `npm run build`
+3.  Apply code formatting with Prettier with `npm run format`
+4.  Generate documentation if you changed something in the API (index.mjs) with `npm run docs`
+5.  Create a Pull Request in GitHub, so we can review the changes and apply them
 
 ### API docs
 
@@ -51,154 +84,88 @@ increase the JavaScript heap size by adding `--max-old-space-size=4096` for Node
 
 ##### Table of Contents
 
-- [getClientContext](#getclientcontext)
-  - [Parameters](#parameters)
-- [getServerContext](#getservercontext)
-  - [Parameters](#parameters-1)
-- [encrypt](#encrypt)
-  - [Parameters](#parameters-2)
-- [encryptForClientRequest](#encryptforclientrequest)
-  - [Parameters](#parameters-3)
-- [decrypt](#decrypt)
-  - [Parameters](#parameters-4)
-- [decryptServerResponseObject](#decryptserverresponseobject)
-  - [Parameters](#parameters-5)
-- [getSerializedGaloisKeys](#getserializedgaloiskeys)
-  - [Parameters](#parameters-6)
-- [compute](#compute)
-  - [Parameters](#parameters-7)
-- [computeWithClientRequestObject](#computewithclientrequestobject)
-  - [Parameters](#parameters-8)
+-   [getClientContext](#getclientcontext)
+    -   [Parameters](#parameters)
+-   [getServerContext](#getservercontext)
+    -   [Parameters](#parameters-1)
+-   [clientEncrypt](#clientencrypt)
+    -   [Parameters](#parameters-2)
+-   [clientDecrypt](#clientdecrypt)
+    -   [Parameters](#parameters-3)
+-   [serverCompute](#servercompute)
+    -   [Parameters](#parameters-4)
 
 #### getClientContext
-
-[src/index.mjs:12-24](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L12-L24 'Source code on GitHub')
 
 This asynchronous function return the client context object.
 
 ##### Parameters
 
-Accepts an Object with the following keys:
-
-- `polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree
-- `plainModulusBitSize` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
-- `securityLevel` **[number<128|192|256>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the security level to use. Defaults to 128 bits.
-- `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use. Defaults to 'zstd'
+-   `psaConf` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** an configuration object holding all configurations needed for execution (same as server config)
+    -   `psaConf.polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree (optional, default `8192`)
+    -   `psaConf.plainModulusBitSize` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the bit size of the plaintext modulus prime that will be generated (optional, default `33`)
+    -   `psaConf.securityLevel` **(`128` \| `192` \| `256`)** the security level in bits (default = 128) (optional, default `128`)
+    -   `psaConf.compressionMode` **(`"none"` \| `"zlib"` \| `"zstd"`)** Optional compression mode for serialization (default = zstd) (optional, default `'zstd'`)
+    -   `psaConf.maskHW` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether Hamming weight masking should be applied (optional, default `true`)
+    -   `psaConf.minHW` **BigInt** smallest allowed Hamming weight (optional, default `BigInt(100)`)
+    -   `psaConf.maskBin` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether binary masking should be applied (optional, default `true`)
+    -   `psaConf.createGkIndices`   (optional, default `true`)
 
 Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** a context object necessary for client side actions
 
 #### getServerContext
 
-[src/index.mjs:34-46](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L34-L46'Source code on GitHub')
-
 This asynchronous function return the server context object.
 
 ##### Parameters
 
-Accepts an Object with the following keys:
-
-- `polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree
-- `plainModulusBitSize` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the plaintext modulus
-- `securityLevel` **[number<128|192|256>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the security level to use. Defaults to 128 bits.
-- `compressionMode` **[string<'none'|'zlib'|'zstd'>](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/string)** the compressino mode to use. Defaults to 'zstd'
+-   `psaConf` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** an configuration object holding all configurations needed for execution (same as client config)
+    -   `psaConf.polyModulusDegree` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the polymodulus degree (optional, default `8192`)
+    -   `psaConf.plainModulusBitSize` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the bit size of the plaintext modulus prime that will be generated (optional, default `33`)
+    -   `psaConf.securityLevel` **(`128` \| `192` \| `256`)** the security level in bits (default = 128) (optional, default `128`)
+    -   `psaConf.compressionMode` **(`"none"` \| `"zlib"` \| `"zstd"`)** Optional compression mode for serialization (default = zstd) (optional, default `'zstd'`)
+    -   `psaConf.maskHW` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether Hamming weight masking should be applied (optional, default `true`)
+    -   `psaConf.minHW` **BigInt** smallest allowed Hamming weight (optional, default `BigInt(100)`)
+    -   `psaConf.maskBin` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether binary masking should be applied (optional, default `true`)
+    -   `psaConf.createGkIndices`   (optional, default `true`)
 
 Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** a context object necessary for client side actions
 
-#### encrypt
-
-[src/index.mjs:79-105](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L79-L105 'Source code on GitHub')
-
-This function encrypts the client's input vector and returns an array of ciphertexts.
-
-##### Parameters
-
-- `inputArray` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** 1D array of numbers
-- `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
-
-Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;CipherText>** an array of ciphertexts
-
-#### encryptForClientRequest
-
-[src/index.mjs:113-126](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L113-L126 'Source code on GitHub')
+#### clientEncrypt
 
 This function encrypts the client's input vector and returns an object ready to be sent to the server.
 
 ##### Parameters
 
-- `inputArray` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** 1D array of numbers
-- `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
+-   `inputArray` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** 1D array of numbers
+-   `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
 
-Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON to be sent to server without further processing
+Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON string to be sent to server without further processing for serverCompute()
 
-#### decrypt
-
-[src/index.mjs:134-152](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L134-L152 'Source code on GitHub')
-
-This function decrypts the computed result vector. The result will be in the first n cells, if the matrix was of dimension (m x n).
-
-##### Parameters
-
-- `encryptedResult` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;CipherText>** 1D array of ciphertexts received from server computation
-- `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
-
-Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** resulting array
-
-#### decryptServerResponseObject
-
-[src/index.mjs:160-163](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L160-L163 'Source code on GitHub')
+#### clientDecrypt
 
 This function decrypts the server response object. The result will be in the first n cells, if the matrix was of dimension (m x n).
 
 ##### Parameters
 
-- `serverResponseObject` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** server response object (JSON), received from the server
-- `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
+-   `serverResponseObject` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** server response object (JSON), received from the server
+-   `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
 
-Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** resulting array
+Returns **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;BigUint64Array>** resulting array
 
-#### getSerializedGaloisKeys
-
-[src/index.mjs:207-209](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L207-L209 'Source code on GitHub')
-
-This function returns the serialized galois key needed for rotations of the ciphertext.
-
-##### Parameters
-
-- `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
-
-Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** base64 encoded galois key
-
-#### compute
-
-[src/index.mjs:174-200](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L174-L200 'Source code on GitHub')
+#### serverCompute
 
 This function computes the dot product between the encrypted client vector and the server matrix.
 Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
 
 ##### Parameters
 
-- `encryptedArray` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;CipherText>** 1D array of ciphertexts received from client
-- `serializedGaloisKeys` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** base64 encoded galois key
-- `matrix` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** a 2D array of Numbers.
-- `serverContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** server side context
+-   `clientRequestObject` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** client request object (JSON), received from client
+-   `matrix` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** a 2D array of Numbers.
+-   `serverContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** server side context
 
-Returns **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;CipherText>** an array of ciphertexts
-
-#### computeWithClientRequestObject
-
-[src/index.mjs:219-236](https://github.com/Safe-DEED/PSA/blob/master/src/index.mjs#L219-L236 'Source code on GitHub')
-
-This function computes the dot product between the encrypted client vector and the server matrix.
-Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
-
-##### Parameters
-
-- `clientRequestObject` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** client request object (JSON), received from client
-- `matrix` **[array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** a 2D array of Numbers.
-- `serverContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** server side context
-
-Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON to be sent to client for decryption
+Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON to be sent to client for decryption with clientDecrypt()
 
 ## Acknowledgements
 
-This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825225.
+This project has received funding from the European Union’s Horizon 2020 research and innovation program under grant agreement No 825225.
