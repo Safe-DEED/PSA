@@ -24,7 +24,7 @@ describe('test with no masking', () => {
       maskHW: false,
       minHW: BigInt(45),
       maskBin: false,
-      createGkIndices: true // set true if you have enough memory available or if you are running in production
+      createGkIndices: false // set true if you have enough memory available or if you are running in production
     };
 
     const clientContext = await PSA.getClientContext(psaConf);
