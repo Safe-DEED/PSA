@@ -152,6 +152,10 @@ export async function createClientContext(
  * @param {boolean}maskHW
  * @param {BigInt} minHW
  * @param {boolean}maskBin
+ * @param createGkIndices
+ * @param diffPriv
+ * @param sensitivity
+ * @param epsilon
  * @returns {Promise<Object>}
  */
 export async function createServerContext(
@@ -161,7 +165,11 @@ export async function createServerContext(
   compressionMode,
   maskHW,
   minHW,
-  maskBin
+  maskBin,
+  createGkIndices,
+  diffPriv,
+  sensitivity,
+  epsilon
 ) {
   const [seal, context] = await createHEContext(
     polyModulusDegree,
@@ -180,7 +188,10 @@ export async function createServerContext(
     evaluator,
     maskHW,
     minHW,
-    maskBin
+    maskBin,
+    diffPriv,
+    sensitivity,
+    epsilon
   };
 }
 

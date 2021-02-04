@@ -56,14 +56,17 @@ The library assumes that both parties agree on a set of parameters. The same par
 getClientContext/getServerContext calls via a config object. A sample config object is provided here:
 
     const psaConf = {
-      polyModulusDegree: 8192,
-      plainModulusBitSize: 33,
-      securityLevel: 128,
-      compression: 'zstd',
-      maskHW: true,
-      minHW: BigInt(100),
-      maskBin: true,
-      createGkIndices: true
+      polyModulusDegree: 8192,          -> degree of the polynomial modulus
+      plainModulusBitSize: 33,          -> plaintext modulus bitcount
+      securityLevel: 128,               -> security bits
+      compression: 'zstd',              -> compression method
+      maskHW: true,                     -> hamming weight masking enabled
+      minHW: BigInt(100),               -> minimum hamming weight required by the client vector
+      maskBin: true,                    -> binary masking enabled
+      createGkIndices: true,            -> using galois indices for key creation
+      diffPriv: true,                   -> differential privacy enabled
+      sensitivity: 1,                   -> sensitivity parameter for differential privacy
+      epsilon: 1.0                      -> epsilon parameter for differential privacy
     };
 
 It does not pose a security risk if one party uses different parameters. However, system failures will occur.
@@ -127,7 +130,10 @@ This asynchronous function return the server context object.
     -   `psaConf.maskHW` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether Hamming weight masking should be applied (optional, default `true`)
     -   `psaConf.minHW` **BigInt** smallest allowed Hamming weight (optional, default `BigInt(100)`)
     -   `psaConf.maskBin` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether binary masking should be applied (optional, default `true`)
+    -   `psaConf.diffPriv` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether differential privacy should be applied (optional, default `false`)
     -   `psaConf.createGkIndices`   (optional, default `true`)
+    -   `psaConf.sensitivity`   (optional, default `Number.MAX_SAFE_INTEGER/2`)
+    -   `psaConf.epsilon`   (optional, default `1.0`)
 
 Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** a context object necessary for client side actions
 

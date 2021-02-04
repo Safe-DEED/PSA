@@ -1,5 +1,6 @@
 import { bigMatMul, getBsgsParams } from './MatMul';
 import { computeMask } from './masking';
+import { cdf } from './laplace.js';
 
 /**
  * Generate a zero-filled BigUint64Array
@@ -123,28 +124,22 @@ export function decrypt(
  * This function computes the dot product between the encrypted client vector and the server matrix.
  * Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
  * @param {string[]} encryptedArray 1D array of serialized ciphertexts received from client
- * @param {CipherText[]} mask the mask array
- * @param {string} serializedGaloisKeys base64 encoded galois key
+ * @param {BigInt} hw hamming weight
  * @param {number[]} matrix a 2D array of Numbers.
  * @param {Object} serverContext server side context
  * @returns {string[]} an array of serialized ciphertexts
  */
-export function compute(
-  encryptedArray,
-  mask,
-  serializedGaloisKeys,
-  matrix,
-  serverContext
-) {
+export function compute(encryptedArray, hw, matrix, serverContext) {
   const { seal, context, encoder, evaluator, maskHW, maskBin } = serverContext;
+  const slotCount = encoder.slotCount;
 
-  const input = encryptedArray.map((inpt) => {
+  const input = encryptedArray.map((input) => {
     const cipherText = seal.CipherText();
-    cipherText.load(context, inpt);
+    cipherText.load(context, input);
     return cipherText;
   });
 
-  const [bsgsN1, bsgsN2] = getBsgsParams(encoder.slotCount);
+  const [bsgsN1, bsgsN2] = getBsgsParams(slotCount);
 
   const N = matrix.length;
   const k = matrix[0].length;
@@ -156,12 +151,30 @@ export function compute(
     serverContext
   );
 
-  //apply mask
-  if (maskHW || maskBin) {
-    const numCipherTexts = Math.ceil((2 * k) / encoder.slotCount);
-    for (let i = 0; i < numCipherTexts; ++i) {
+  const numCipherTexts = Math.ceil((2 * k) / slotCount);
+  let mask = null;
+  if (serverContext.maskHW || serverContext.maskBin) {
+    mask = computeMask(input, hw, numCipherTexts, serverContext);
+  }
+
+  //apply mask and noise
+  for (let i = 0; i < numCipherTexts; ++i) {
+    if (maskHW || maskBin) {
+      //masking
       evaluator.add(output[i], mask[i], output[i]);
-    } // Clean up WASM instances
+    }
+
+    if (serverContext.diffPriv) {
+      //noise
+      const noisePlain = new BigInt64Array(slotCount);
+      for (let s = 0; s < slotCount; ++s) {
+        let b = serverContext.sensitivity / serverContext.epsilon;
+        noisePlain[s] = BigInt(Math.round(cdf.laplace(1, 0, b)[0]));
+      }
+      const noise = seal.PlainText();
+      encoder.encode(noisePlain, noise);
+      evaluator.addPlain(output[i], noise, output[i]);
+    }
   }
 
   // Clean up WASM instances

@@ -132,11 +132,15 @@ async function createClientContext(polyModulusDegree, plainModulus, securityLeve
  * @param {boolean}maskHW
  * @param {BigInt} minHW
  * @param {boolean}maskBin
+ * @param createGkIndices
+ * @param diffPriv
+ * @param sensitivity
+ * @param epsilon
  * @returns {Promise<Object>}
  */
 
 
-async function createServerContext(polyModulusDegree, plainModulus, securityLevel, compressionMode, maskHW, minHW, maskBin) {
+async function createServerContext(polyModulusDegree, plainModulus, securityLevel, compressionMode, maskHW, minHW, maskBin, createGkIndices, diffPriv, sensitivity, epsilon) {
   const [seal, context] = await createHEContext(polyModulusDegree, securityLevel, plainModulus);
   const encoder = seal.BatchEncoder(context);
   const evaluator = seal.Evaluator(context);
@@ -149,7 +153,10 @@ async function createServerContext(polyModulusDegree, plainModulus, securityLeve
     evaluator,
     maskHW,
     minHW,
-    maskBin
+    maskBin,
+    diffPriv,
+    sensitivity,
+    epsilon
   };
 }
 /**

@@ -1,13 +1,11 @@
 import { createClientContext, createServerContext } from './HEutil';
-import { computeMask } from './masking';
 import {
   getClientRequestObject,
   getServerResponseObject,
   compute,
   decrypt,
   encrypt,
-  parse,
-  stringify
+  parse
 } from './apiUtil';
 
 /**
@@ -54,6 +52,8 @@ async function getClientContext({
  * @param {boolean} psaConf.maskHW whether Hamming weight masking should be applied
  * @param {BigInt} psaConf.minHW smallest allowed Hamming weight
  * @param {boolean} psaConf.maskBin whether binary masking should be applied
+ * @param {boolean} psaConf.diffPriv whether differential privacy should be applied
+ *
  * @returns {Object} a context object necessary for client side actions
  */
 
@@ -65,7 +65,10 @@ async function getServerContext({
   maskHW = true,
   minHW = BigInt(100),
   maskBin = true,
-  createGkIndices = true
+  createGkIndices = true,
+  diffPriv = false,
+  sensitivity = Number.MAX_SAFE_INTEGER / 2,
+  epsilon = 1.0
 }) {
   return await createServerContext(
     polyModulusDegree,
@@ -75,7 +78,10 @@ async function getServerContext({
     maskHW,
     minHW,
     maskBin,
-    createGkIndices
+    createGkIndices,
+    diffPriv,
+    sensitivity,
+    epsilon
   );
 }
 
@@ -115,8 +121,6 @@ function clientDecrypt(serverResponseObject, clientContext) {
 
 function serverCompute(clientRequestObject, matrix, serverContext) {
   const seal = serverContext.seal;
-  const encoder = serverContext.encoder;
-  const slotCount = encoder.slotCount;
   const context = serverContext.context;
   const {
     encryptedArray: arrayOfBase64EncodedCiphertexts,
@@ -139,27 +143,13 @@ function serverCompute(clientRequestObject, matrix, serverContext) {
     serverContext.relin = relinKeys;
   }
 
-  const arrayOfCiphertexts = [];
-  arrayOfBase64EncodedCiphertexts.forEach((base64encodedCipherText) => {
-    const cipherText = serverContext.seal.CipherText();
-    cipherText.load(serverContext.context, base64encodedCipherText);
-    arrayOfCiphertexts.push(cipherText);
-  });
-
-  let mask = null;
-  if (serverContext.maskHW || serverContext.maskBin) {
-    const k = matrix[0].length;
-    const numCipherTexts = Math.ceil((2 * k) / slotCount);
-    mask = computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext);
-  }
-
   const computationResult = compute(
     arrayOfBase64EncodedCiphertexts,
-    mask,
-    galois,
+    hw,
     matrix,
     serverContext
   );
+
   return getServerResponseObject(computationResult);
 }
 

@@ -40,6 +40,7 @@ function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   const encoder = serverContext.encoder;
   const slotCount = encoder.slotCount;
   const galoisKeys = serverContext.galois;
+  const relinKeys = serverContext.relin;
   const plainModulusBigInt = getPlainModulusFromContext(serverContext.context)
     .value;
 
@@ -68,7 +69,15 @@ function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   }
 
   for (let i = 0; i < arrayOfCipherTexts.length; ++i) {
-    dot(arrayOfCipherTexts[i], dy[i], serverContext);
+    //dot(arrayOfCipherTexts[i], dy[i], serverContext);
+    evaluator.dotProduct(
+      arrayOfCipherTexts[i],
+      dy[i],
+      relinKeys,
+      galoisKeys,
+      seal.SchemeType.bfv,
+      dy[i]
+    );
   }
 
   const mask = seal.CipherText();
