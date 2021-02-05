@@ -142,7 +142,7 @@ export function decrypt(
  * @param {Object} serverContext server side context
  * @returns {string[]} an array of serialized ciphertexts
  */
-export function compute(encryptedArray, hw, matrix, serverContext) {
+export async function compute(encryptedArray, hw, matrix, serverContext) {
   const { seal, context, encoder, evaluator, maskHW, maskBin } = serverContext;
   const slotCount = encoder.slotCount;
 
@@ -167,7 +167,7 @@ export function compute(encryptedArray, hw, matrix, serverContext) {
   const numCipherTexts = Math.ceil((2 * k) / slotCount);
   let mask = null;
   if (serverContext.maskHW || serverContext.maskBin) {
-    mask = computeMask(input, hw, numCipherTexts, serverContext);
+    mask = await computeMask(input, hw, numCipherTexts, serverContext);
   }
 
   //apply mask and noise

@@ -93,15 +93,17 @@ function clientDecrypt(serverResponseObject, clientContext) {
 /**
  * This function computes the dot product between the encrypted client vector and the server matrix.
  * Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
+ * @async
+ * @function serverCompute
  * @param {string | Object} clientRequestObject client request object (JSON string or Object), received from client
  * @param {number[]} matrix a 2D array of Numbers.
  * @param {Object} serverContext server side context
  * @param {boolean} serialize true if output should be stringified
- * @returns {string | Object} Context object in optionally unstringified form to be sent to client for decryption with clientDecrypt()
+ * @returns {Promise} Promise returning a context object in optionally unstringified form to be sent to client for decryption with clientDecrypt()
  */
 
 
-function serverCompute(clientRequestObject, matrix, serverContext, serialize = true) {
+async function serverCompute(clientRequestObject, matrix, serverContext, serialize = true) {
   const seal = serverContext.seal;
   const context = serverContext.context;
   const {
@@ -125,7 +127,7 @@ function serverCompute(clientRequestObject, matrix, serverContext, serialize = t
     serverContext.relin = relinKeys;
   }
 
-  const computationResult = (0, _apiUtil.compute)(arrayOfBase64EncodedCiphertexts, hw, matrix, serverContext);
+  const computationResult = await (0, _apiUtil.compute)(arrayOfBase64EncodedCiphertexts, hw, matrix, serverContext);
   return (0, _apiUtil.getServerResponseObject)(computationResult, serialize);
 }
 /**

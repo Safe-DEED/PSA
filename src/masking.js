@@ -5,11 +5,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.computeMask = computeMask;
 
-var _crypto = _interopRequireDefault(require("crypto"));
-
 var _apiUtil = require("./apiUtil");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function computeMaskHW(arrayOfCiphertexts, hw, serverContext) {
   const seal = serverContext.seal;
@@ -37,7 +37,7 @@ function computeMaskHW(arrayOfCiphertexts, hw, serverContext) {
   return mask;
 }
 
-function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
+async function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   const seal = serverContext.seal;
   const evaluator = serverContext.evaluator;
   const encoder = serverContext.encoder;
@@ -45,8 +45,8 @@ function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   const galoisKeys = serverContext.galois;
   const relinKeys = serverContext.relin;
   const plainModulusBigInt = getPlainModulusFromContext(serverContext.context).value;
-  const y = getRandomFieldElementWithout0(serverContext);
-  const r = getRandomFieldElementWithout0(serverContext); // y vector
+  const y = await getRandomFieldElementWithout0(serverContext);
+  const r = await getRandomFieldElementWithout0(serverContext); // y vector
 
   const yEnc = [];
   let startVal = r;
@@ -88,20 +88,10 @@ function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   return mask;
 }
 
-function dot(in1, inOut, serverContext) {
+async function computeMaskBin(arrayOfCipherTexts, d, serverContext) {
   const evaluator = serverContext.evaluator;
-  const relin = serverContext.relin;
-  const galois = serverContext.galois;
-  const seal = serverContext.seal;
-  evaluator.multiply(in1, inOut, inOut);
-  evaluator.relinearize(inOut, relin, inOut);
-  evaluator.sumElements(inOut, galois, seal.SchemeType.bfv, inOut);
-}
-
-function computeMaskBin(arrayOfCipherTexts, d, serverContext) {
-  const evaluator = serverContext.evaluator;
-  const mask = computePartBinMask(arrayOfCipherTexts, d, serverContext);
-  const mask1 = computePartBinMask(arrayOfCipherTexts, d, serverContext);
+  const mask = await computePartBinMask(arrayOfCipherTexts, d, serverContext);
+  const mask1 = await computePartBinMask(arrayOfCipherTexts, d, serverContext);
   evaluator.add(mask, mask1, mask);
   mask1.delete();
   return mask;
@@ -144,23 +134,22 @@ function isNodeEnvironment() {
   return isNode;
 }
 
-function getRandom64BitBigInt() {
+async function getRandom64BitBigInt() {
   if (isNodeEnvironment()) {
-    return getRandom64BitBigIntNode();
+    return await getRandom64BitBigIntNode();
   } else {
     return getRandom64BitBigIntBrowser();
   }
 }
 
-function getRandom64BitBigIntNode() {
-  const buf = _crypto.default.randomBytes(256);
-
+async function getRandom64BitBigIntNode() {
+  const crypto = await Promise.resolve().then(() => _interopRequireWildcard(require('crypto')));
+  const buf = crypto.randomBytes(256);
   return buf.readBigUInt64LE();
 }
 
 function getRandom64BitBigIntBrowser() {
-  const randomBytes = _crypto.default.getRandomValues(new Uint8Array(8));
-
+  const randomBytes = crypto.getRandomValues(new Uint8Array(8));
   const hex = [];
   randomBytes.forEach(function (i) {
     let h = i.toString(16);
@@ -174,26 +163,26 @@ function getRandom64BitBigIntBrowser() {
   return BigInt('0x' + hex.join(''));
 }
 
-function getRandomFieldElement({
+async function getRandomFieldElement({
   context
 }) {
   const plainModulus = getPlainModulusFromContext(context);
   const modulusValueAsBigInt = plainModulus.value;
   const bitMask = BigInt((1 << plainModulus.bitCount) - 1);
-  let random64BitBigInt = getRandom64BitBigInt();
+  let random64BitBigInt = await getRandom64BitBigInt();
   let randomFieldElement = random64BitBigInt & bitMask;
 
   while (randomFieldElement >= modulusValueAsBigInt) {
-    random64BitBigInt = getRandom64BitBigInt();
+    random64BitBigInt = await getRandom64BitBigInt();
     randomFieldElement = random64BitBigInt & bitMask;
   }
 
   return randomFieldElement;
 }
 
-function getRandomFieldElementWithout0(serverContext) {
+async function getRandomFieldElementWithout0(serverContext) {
   while (1) {
-    const element = getRandomFieldElement(serverContext);
+    const element = await getRandomFieldElement(serverContext);
 
     if (element) {
       return element;
@@ -225,7 +214,7 @@ function getNoiseBudget(cipherTextArray, serverContext, single = false) {
   }
 }
 
-function computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext) {
+async function computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext) {
   const seal = serverContext.seal;
   const encoder = serverContext.encoder;
   const slotCount = encoder.slotCount;
@@ -235,14 +224,14 @@ function computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext) {
 
   if (serverContext.maskHW) {
     maskHW = computeMaskHW(arrayOfCiphertexts, hw, serverContext);
-    const z = getRandomFieldElement(serverContext);
+    const z = await getRandomFieldElement(serverContext);
     const Z = seal.PlainText();
     const bigUintArrayFilledWithZ = new BigUint64Array(encoder.slotCount).fill(z);
     encoder.encode(bigUintArrayFilledWithZ, Z);
     evaluator.multiplyPlain(maskHW, Z, maskHW);
   }
 
-  let maskBin = serverContext.maskBin ? computeMaskBin(arrayOfCiphertexts, d, serverContext) : null; //setting mask
+  let maskBin = serverContext.maskBin ? await computeMaskBin(arrayOfCiphertexts, d, serverContext) : null; //setting mask
 
   const maskTmp = seal.CipherText();
 
@@ -267,7 +256,7 @@ function computeMask(arrayOfCiphertexts, hw, numCipherTexts, serverContext) {
     let rDecode = new BigUint64Array(slotCount);
 
     for (let j = 0; j < slotCount; ++j) {
-      rDecode[j] = getRandomFieldElementWithout0(serverContext);
+      rDecode[j] = await getRandomFieldElementWithout0(serverContext);
     }
 
     rEnc.push(encoder.encode(rDecode));

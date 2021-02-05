@@ -175,9 +175,9 @@ Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n
 -   `clientRequestObject` **([string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object))** client request object (JSON string or Object), received from client
 -   `matrix` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** a 2D array of Numbers.
 -   `serverContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** server side context
--   `serialize` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if output should be stringified (optional, default `true`)
+-   `serialize` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if output should be stringified
 
-Returns **([string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object))** Context object in optionally unstringified form to be sent to client for decryption with clientDecrypt()
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** Promise returning a context object in optionally unstringified form to be sent to client for decryption with clientDecrypt()
 
 #### stringify
 

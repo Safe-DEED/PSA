@@ -165,7 +165,7 @@ function decrypt(encryptedResult, {
  */
 
 
-function compute(encryptedArray, hw, matrix, serverContext) {
+async function compute(encryptedArray, hw, matrix, serverContext) {
   const {
     seal,
     context,
@@ -193,7 +193,7 @@ function compute(encryptedArray, hw, matrix, serverContext) {
   let mask = null;
 
   if (serverContext.maskHW || serverContext.maskBin) {
-    mask = (0, _masking.computeMask)(input, hw, numCipherTexts, serverContext);
+    mask = await (0, _masking.computeMask)(input, hw, numCipherTexts, serverContext);
   } //apply mask and noise
 
 

@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { getFilledBigUint64Array } from './apiUtil';
 
 function computeMaskHW(arrayOfCiphertexts, hw, serverContext) {
@@ -34,7 +33,7 @@ function computeMaskHW(arrayOfCiphertexts, hw, serverContext) {
   return mask;
 }
 
-function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
+async function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   const seal = serverContext.seal;
   const evaluator = serverContext.evaluator;
   const encoder = serverContext.encoder;
@@ -44,8 +43,8 @@ function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   const plainModulusBigInt = getPlainModulusFromContext(serverContext.context)
     .value;
 
-  const y = getRandomFieldElementWithout0(serverContext);
-  const r = getRandomFieldElementWithout0(serverContext);
+  const y = await getRandomFieldElementWithout0(serverContext);
+  const r = await getRandomFieldElementWithout0(serverContext);
 
   // y vector
   const yEnc = [];
@@ -91,22 +90,11 @@ function computePartBinMask(arrayOfCipherTexts, d, serverContext) {
   return mask;
 }
 
-function dot(in1, inOut, serverContext) {
-  const evaluator = serverContext.evaluator;
-  const relin = serverContext.relin;
-  const galois = serverContext.galois;
-  const seal = serverContext.seal;
-
-  evaluator.multiply(in1, inOut, inOut);
-  evaluator.relinearize(inOut, relin, inOut);
-  evaluator.sumElements(inOut, galois, seal.SchemeType.bfv, inOut);
-}
-
-function computeMaskBin(arrayOfCipherTexts, d, serverContext) {
+async function computeMaskBin(arrayOfCipherTexts, d, serverContext) {
   const evaluator = serverContext.evaluator;
 
-  const mask = computePartBinMask(arrayOfCipherTexts, d, serverContext);
-  const mask1 = computePartBinMask(arrayOfCipherTexts, d, serverContext);
+  const mask = await computePartBinMask(arrayOfCipherTexts, d, serverContext);
+  const mask1 = await computePartBinMask(arrayOfCipherTexts, d, serverContext);
 
   evaluator.add(mask, mask1, mask);
   mask1.delete();
@@ -147,15 +135,16 @@ function isNodeEnvironment() {
   return isNode;
 }
 
-function getRandom64BitBigInt() {
+async function getRandom64BitBigInt() {
   if (isNodeEnvironment()) {
-    return getRandom64BitBigIntNode();
+    return await getRandom64BitBigIntNode();
   } else {
     return getRandom64BitBigIntBrowser();
   }
 }
 
-function getRandom64BitBigIntNode() {
+async function getRandom64BitBigIntNode() {
+  const crypto = await import('crypto');
   const buf = crypto.randomBytes(256);
   return buf.readBigUInt64LE();
 }
@@ -173,23 +162,23 @@ function getRandom64BitBigIntBrowser() {
   return BigInt('0x' + hex.join(''));
 }
 
-function getRandomFieldElement({ context }) {
+async function getRandomFieldElement({ context }) {
   const plainModulus = getPlainModulusFromContext(context);
   const modulusValueAsBigInt = plainModulus.value;
   const bitMask = BigInt((1 << plainModulus.bitCount) - 1);
 
-  let random64BitBigInt = getRandom64BitBigInt();
+  let random64BitBigInt = await getRandom64BitBigInt();
   let randomFieldElement = random64BitBigInt & bitMask;
   while (randomFieldElement >= modulusValueAsBigInt) {
-    random64BitBigInt = getRandom64BitBigInt();
+    random64BitBigInt = await getRandom64BitBigInt();
     randomFieldElement = random64BitBigInt & bitMask;
   }
   return randomFieldElement;
 }
 
-function getRandomFieldElementWithout0(serverContext) {
+async function getRandomFieldElementWithout0(serverContext) {
   while (1) {
-    const element = getRandomFieldElement(serverContext);
+    const element = await getRandomFieldElement(serverContext);
     if (element) {
       return element;
     }
@@ -222,7 +211,7 @@ function getNoiseBudget(cipherTextArray, serverContext, single = false) {
   }
 }
 
-export function computeMask(
+export async function computeMask(
   arrayOfCiphertexts,
   hw,
   numCipherTexts,
@@ -237,7 +226,7 @@ export function computeMask(
   let maskHW;
   if (serverContext.maskHW) {
     maskHW = computeMaskHW(arrayOfCiphertexts, hw, serverContext);
-    const z = getRandomFieldElement(serverContext);
+    const z = await getRandomFieldElement(serverContext);
     const Z = seal.PlainText();
     const bigUintArrayFilledWithZ = new BigUint64Array(encoder.slotCount).fill(
       z
@@ -247,7 +236,7 @@ export function computeMask(
   }
 
   let maskBin = serverContext.maskBin
-    ? computeMaskBin(arrayOfCiphertexts, d, serverContext)
+    ? await computeMaskBin(arrayOfCiphertexts, d, serverContext)
     : null;
 
   //setting mask
@@ -271,7 +260,7 @@ export function computeMask(
   for (let i = 0; i < numCipherTexts; ++i) {
     let rDecode = new BigUint64Array(slotCount);
     for (let j = 0; j < slotCount; ++j) {
-      rDecode[j] = getRandomFieldElementWithout0(serverContext);
+      rDecode[j] = await getRandomFieldElementWithout0(serverContext);
     }
     rEnc.push(encoder.encode(rDecode));
   }
