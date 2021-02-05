@@ -1,6 +1,6 @@
 import { bigMatMul, getBsgsParams } from './MatMul';
 import { computeMask } from './masking';
-import { cdf } from './laplace.js';
+import cdf from './laplace';
 
 /**
  * Generate a zero-filled BigUint64Array

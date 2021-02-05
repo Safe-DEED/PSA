@@ -3,8 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.roundLaplace = roundLaplace;
-exports.cdf = void 0;
+exports.default = void 0;
 
 var _crypto = _interopRequireDefault(require("crypto"));
 
@@ -24,10 +23,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  *
  * ================================================================ */
 // Shortcuts
-var ln = Math.log;
-
-function roundLaplace() {}
-
+const ln = Math.log;
 let cdf = {
   /**
    * This is the core function for generating entropy
@@ -39,11 +35,11 @@ let cdf = {
   prng: function prng(len) {
     if (len === undefined) len = 16;
 
-    var entropy = _crypto.default.randomBytes(len);
+    const entropy = _crypto.default.randomBytes(len);
 
-    var result = 0;
+    let result = 0;
 
-    for (var i = 0; i < len; i++) {
+    for (let i = 0; i < len; i++) {
       result = result + Number(entropy[i]) / Math.pow(256, i + 1);
     }
 
@@ -59,14 +55,14 @@ let cdf = {
    * @returns {Array} Random variates array
    */
   laplace: function laplace(n, loc, scale) {
-    n = this._v(n, "n");
-    loc = this._v(loc, "r", 0);
-    scale = this._v(scale, "nn", 1);
-    var toReturn = [];
+    n = this._v(n, 'n');
+    loc = this._v(loc, 'r', 0);
+    scale = this._v(scale, 'nn', 1);
+    const toReturn = [];
 
-    for (var i = 0; i < n; i++) {
-      var core = this.sample([-1, 1])[0] * ln(this.prng());
-      var x = loc - scale * core;
+    for (let i = 0; i < n; i++) {
+      const core = this.sample([-1, 1])[0] * ln(this.prng());
+      const x = loc - scale * core;
       toReturn[i] = x;
     }
 
@@ -83,27 +79,27 @@ let cdf = {
    */
   sample: function sample(collection, n, replace, ratios) {
     // Validations
-    collection = this._v(collection, "a");
-    n = this._v(n, "n", collection.length); // If n is undefined, sample the full array
+    collection = this._v(collection, 'a');
+    n = this._v(n, 'n', collection.length); // If n is undefined, sample the full array
 
     if (replace === undefined) replace = false;
-    if (!replace && collection.length < n) throw new Error("You cannot select " + n + " items from an array of length " + collection.length + " without replacement");
+    if (!replace && collection.length < n) throw new Error('You cannot select ' + n + ' items from an array of length ' + collection.length + ' without replacement');
 
     if (ratios === undefined) {
       ratios = [];
 
-      for (var m = 0; m < collection.length; m++) {
+      for (let m = 0; m < collection.length; m++) {
         ratios[m] = 1;
       }
     }
 
-    var cumulativeProbs = this._getCumulativeProbs(ratios, collection.length); // Main loop
+    let cumulativeProbs = this._getCumulativeProbs(ratios, collection.length); // Main loop
 
 
-    var toReturn = [];
+    const toReturn = [];
 
-    for (var i = 0; i < n; i++) {
-      var chosen = this._sampleOneIndex(cumulativeProbs);
+    for (let i = 0; i < n; i++) {
+      const chosen = this._sampleOneIndex(cumulativeProbs);
 
       if (replace) {
         toReturn[i] = collection[chosen];
@@ -130,22 +126,22 @@ let cdf = {
    * @private
    */
   _getCumulativeProbs: function _getCumulativeProbs(ratios, len) {
-    if (len === undefined) throw new Error("An error occurred: len was not sent to _getCumulativeProbs");
-    if (ratios.length !== len) throw new Error("Probabilities for sample must be same length as the array to sample from");
-    var toReturn = [];
+    if (len === undefined) throw new Error('An error occurred: len was not sent to _getCumulativeProbs');
+    if (ratios.length !== len) throw new Error('Probabilities for sample must be same length as the array to sample from');
+    const toReturn = [];
 
     if (ratios !== undefined) {
-      ratios = this._v(ratios, "a");
-      if (ratios.length !== len) throw new Error("Probabilities array must be the same length as the array you are sampling from");
-      var sum = 0;
+      ratios = this._v(ratios, 'a');
+      if (ratios.length !== len) throw new Error('Probabilities array must be the same length as the array you are sampling from');
+      let sum = 0;
       ratios.map(function (ratio) {
-        ratio = this._v(ratio, "nn"); // Note validating as ANY non-negative number
+        ratio = this._v(ratio, 'nn'); // Note validating as ANY non-negative number
 
         sum += ratio;
         toReturn.push(sum);
       }.bind(this)); // Divide by total to normalize
 
-      for (var k = 0; k < toReturn.length; k++) {
+      for (let k = 0; k < toReturn.length; k++) {
         toReturn[k] = toReturn[k] / sum;
       }
 
@@ -153,18 +149,18 @@ let cdf = {
     }
   },
   _sampleOneIndex: function sampleOneIndex(cumulativeProbs) {
-    var toTake = this.prng(); // Find out where this lands in weights
+    const toTake = this.prng(); // Find out where this lands in weights
 
-    var cur = 0;
+    let cur = 0;
 
     while (toTake > cumulativeProbs[cur]) cur++;
 
     return cur;
   },
   _factorial: function factorial(n) {
-    var toReturn = 1;
+    let toReturn = 1;
 
-    for (var i = 2; i <= n; i++) toReturn = toReturn * i;
+    for (let i = 2; i <= n; i++) toReturn = toReturn * i;
 
     return toReturn;
   },
@@ -175,67 +171,71 @@ let cdf = {
 
     switch (type) {
       // Array of 1 item or more
-      case "a":
-        if (!Array.isArray(param) || !param.length) throw new Error("Expected an array of length 1 or greater");
+      case 'a':
+        if (!Array.isArray(param) || !param.length) throw new Error('Expected an array of length 1 or greater');
         return param.slice(0);
       // Integer
 
-      case "int":
-        if (param !== Number(param)) throw new Error("A required parameter is missing or not a number");
-        if (param !== Math.round(param)) throw new Error("Parameter must be a whole number");
+      case 'int':
+        if (param !== Number(param)) throw new Error('A required parameter is missing or not a number');
+        if (param !== Math.round(param)) throw new Error('Parameter must be a whole number');
         if (param === Infinity) throw new Error("Sent 'infinity' as a parameter");
         return param;
       // Natural number
 
-      case "n":
-        if (param === undefined) throw new Error("You must specify how many values you want");
-        if (param !== Number(param)) throw new Error("The number of values must be numeric");
-        if (param !== Math.round(param)) throw new Error("The number of values must be a whole number");
-        if (param < 1) throw new Error("The number of values must be a whole number of 1 or greater");
-        if (param === Infinity) throw new Error("The number of values cannot be infinite ;-)");
+      case 'n':
+        if (param === undefined) throw new Error('You must specify how many values you want');
+        if (param !== Number(param)) throw new Error('The number of values must be numeric');
+        if (param !== Math.round(param)) throw new Error('The number of values must be a whole number');
+        if (param < 1) throw new Error('The number of values must be a whole number of 1 or greater');
+        if (param === Infinity) throw new Error('The number of values cannot be infinite ;-)');
         return param;
       // Valid probability
 
-      case "p":
-        if (Number(param) !== param) throw new Error("Probability value is missing or not a number");
-        if (param > 1) throw new Error("Probability values cannot be greater than 1");
-        if (param < 0) throw new Error("Probability values cannot be less than 0");
+      case 'p':
+        if (Number(param) !== param) throw new Error('Probability value is missing or not a number');
+        if (param > 1) throw new Error('Probability values cannot be greater than 1');
+        if (param < 0) throw new Error('Probability values cannot be less than 0');
         return param;
       // Positive numbers
 
-      case "pos":
-        if (Number(param) !== param) throw new Error("A required parameter is missing or not a number");
-        if (param <= 0) throw new Error("Parameter must be greater than 0");
+      case 'pos':
+        if (Number(param) !== param) throw new Error('A required parameter is missing or not a number');
+        if (param <= 0) throw new Error('Parameter must be greater than 0');
         if (param === Infinity) throw new Error("Sent 'infinity' as a parameter");
         return param;
       // Look for numbers (reals)
 
-      case "r":
-        if (Number(param) !== param) throw new Error("A required parameter is missing or not a number");
+      case 'r':
+        if (Number(param) !== param) throw new Error('A required parameter is missing or not a number');
         if (param === Infinity) throw new Error("Sent 'infinity' as a parameter");
         return param;
       // Non negative real number
 
-      case "nn":
-        if (param !== Number(param)) throw new Error("A required parameter is missing or not a number");
-        if (param < 0) throw new Error("Parameter cannot be less than 0");
+      case 'nn':
+        if (param !== Number(param)) throw new Error('A required parameter is missing or not a number');
+        if (param < 0) throw new Error('Parameter cannot be less than 0');
         if (param === Infinity) throw new Error("Sent 'infinity' as a parameter");
         return param;
       // Non negative whole number (integer)
 
-      case "nni":
-        if (param !== Number(param)) throw new Error("A required parameter is missing or not a number");
-        if (param !== Math.round(param)) throw new Error("Parameter must be a whole number");
-        if (param < 0) throw new Error("Parameter cannot be less than zero");
+      case 'nni':
+        if (param !== Number(param)) throw new Error('A required parameter is missing or not a number');
+        if (param !== Math.round(param)) throw new Error('Parameter must be a whole number');
+        if (param < 0) throw new Error('Parameter cannot be less than zero');
         if (param === Infinity) throw new Error("Sent 'infinity' as a parameter");
         return param;
       // Non-empty string
 
-      case "str":
-        if (param !== String(param)) throw new Error("A required parameter is missing or not a string");
-        if (param.length === 0) throw new Error("Parameter must be at least one character long");
+      case 'str':
+        if (param !== String(param)) throw new Error('A required parameter is missing or not a string');
+        if (param.length === 0) throw new Error('Parameter must be at least one character long');
         return param;
     }
   }
 };
-exports.cdf = cdf;
+var _default = {
+  cdf
+};
+exports.default = _default;
+module.exports = exports.default;

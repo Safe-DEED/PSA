@@ -15,11 +15,9 @@
 import crypto from 'crypto';
 
 // Shortcuts
-var ln = Math.log;
+const ln = Math.log;
 
-export function roundLaplace() {}
-
-export let cdf = {
+let cdf = {
   /**
    * This is the core function for generating entropy
    *
@@ -30,10 +28,10 @@ export let cdf = {
   prng: function prng(len) {
     if (len === undefined) len = 16;
 
-    var entropy = crypto.randomBytes(len);
-    var result = 0;
+    const entropy = crypto.randomBytes(len);
+    let result = 0;
 
-    for (var i = 0; i < len; i++) {
+    for (let i = 0; i < len; i++) {
       result = result + Number(entropy[i]) / Math.pow(256, i + 1);
     }
     return result;
@@ -52,12 +50,12 @@ export let cdf = {
     loc = this._v(loc, 'r', 0);
     scale = this._v(scale, 'nn', 1);
 
-    var toReturn = [];
+    const toReturn = [];
 
-    for (var i = 0; i < n; i++) {
-      var core = this.sample([-1, 1])[0] * ln(this.prng());
+    for (let i = 0; i < n; i++) {
+      const core = this.sample([-1, 1])[0] * ln(this.prng());
 
-      var x = loc - scale * core;
+      const x = loc - scale * core;
 
       toReturn[i] = x;
     }
@@ -89,18 +87,18 @@ export let cdf = {
 
     if (ratios === undefined) {
       ratios = [];
-      for (var m = 0; m < collection.length; m++) {
+      for (let m = 0; m < collection.length; m++) {
         ratios[m] = 1;
       }
     }
 
-    var cumulativeProbs = this._getCumulativeProbs(ratios, collection.length);
+    let cumulativeProbs = this._getCumulativeProbs(ratios, collection.length);
 
     // Main loop
-    var toReturn = [];
+    const toReturn = [];
 
-    for (var i = 0; i < n; i++) {
-      var chosen = this._sampleOneIndex(cumulativeProbs);
+    for (let i = 0; i < n; i++) {
+      const chosen = this._sampleOneIndex(cumulativeProbs);
 
       if (replace) {
         toReturn[i] = collection[chosen];
@@ -138,7 +136,7 @@ export let cdf = {
         'Probabilities for sample must be same length as the array to sample from'
       );
 
-    var toReturn = [];
+    const toReturn = [];
 
     if (ratios !== undefined) {
       ratios = this._v(ratios, 'a');
@@ -147,7 +145,7 @@ export let cdf = {
           'Probabilities array must be the same length as the array you are sampling from'
         );
 
-      var sum = 0;
+      let sum = 0;
       ratios.map(
         function (ratio) {
           ratio = this._v(ratio, 'nn'); // Note validating as ANY non-negative number
@@ -157,7 +155,7 @@ export let cdf = {
       );
 
       // Divide by total to normalize
-      for (var k = 0; k < toReturn.length; k++) {
+      for (let k = 0; k < toReturn.length; k++) {
         toReturn[k] = toReturn[k] / sum;
       }
       return toReturn;
@@ -165,18 +163,18 @@ export let cdf = {
   },
 
   _sampleOneIndex: function sampleOneIndex(cumulativeProbs) {
-    var toTake = this.prng();
+    const toTake = this.prng();
 
     // Find out where this lands in weights
-    var cur = 0;
+    let cur = 0;
     while (toTake > cumulativeProbs[cur]) cur++;
 
     return cur;
   },
 
   _factorial: function factorial(n) {
-    var toReturn = 1;
-    for (var i = 2; i <= n; i++) toReturn = toReturn * i;
+    let toReturn = 1;
+    for (let i = 2; i <= n; i++) toReturn = toReturn * i;
 
     return toReturn;
   },
@@ -275,4 +273,8 @@ export let cdf = {
         return param;
     }
   }
+};
+
+export default {
+  cdf
 };

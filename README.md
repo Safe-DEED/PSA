@@ -6,7 +6,7 @@ This javascript library was developed for building arbitrary PSA applications.
 
 ### Compatibility
 
-The library supports both CommonJS and ES Modules.
+The library supports both CommonJS and ES Modules and runs in Node environments as well as in browsers.
 
 ### Installation instructions
 
@@ -39,16 +39,17 @@ The polymodulus degree can be one of:
 The plaintext modulus can be set arbitrarily. However, applications in the past, using the library, were using 33 bit.
 
 For users who don't know how to choose the parameters, we recommend using 8192 as the polymodulus degree and 33 as the
-plaintext modulus. If the noise budget gets consumed, try using the next higher polymodulus degree.
+plaintext modulus. If the noise budget gets consumed, try using the next higher polymodulus degree .
 
 **Note:** The application may run out of memory, depending on the polymodulus degree. A solution could be to specify a
 different compression mode such as 'none' or the slower 'zlib' over the default 'zstd'. In addition, you may need to
 increase the JavaScript heap size by adding `--max-old-space-size=4096` for NodeJS.
 
-### Masking
+### Masking and differential privacy
 
-The PSA library supports masking. A user can use Hamming weight masking, binary masking or both by specifying it in the
-getClientContext/getServerContext call in the beginning.
+The PSA library supports masking and a differential privacy. A user can use Hamming weight masking, binary masking and
+differential privacy by specifying it in the configuration object which is passed to the getClientContext/getServerContext
+call in the beginning.
 
 ### Caveats
 
@@ -75,10 +76,10 @@ It does not pose a security risk if one party uses different parameters. However
 
 We are happy to welcome everyone who is willing to contribute. The workflow is as follows:
 
-1.  Write your code in <filename>.mjs files
+1.  Write your code in <filename>.mjs files, use ES Modules syntax and always document the code in JSDoc style
 2.  Transpile the files to CommonJS module syntax with `npm run build`
 3.  Apply code formatting with Prettier with `npm run format`
-4.  Generate documentation if you changed something in the API (index.mjs) with `npm run docs`
+4.  Generate documentation with `npm run docs`
 5.  Create a Pull Request in GitHub, so we can review the changes and apply them
 
 ### API docs
