@@ -1,6 +1,6 @@
 import { bigMatMul, getBsgsParams } from './MatMul';
 import { computeMask } from './masking';
-import cdf from './laplace';
+import { laplace } from './laplace';
 
 /**
  * Generate a zero-filled BigUint64Array
@@ -111,7 +111,7 @@ export function decrypt(
     }
 
     const plainText = decryptor.decrypt(cipherText);
-    const decoded = encoder.decodeBigInt(plainText, false);
+    const decoded = encoder.decodeBigInt(plainText);
     cipherText.delete();
     plainText.delete();
     return decoded;
@@ -169,7 +169,7 @@ export function compute(encryptedArray, hw, matrix, serverContext) {
       const noisePlain = new BigInt64Array(slotCount);
       for (let s = 0; s < slotCount; ++s) {
         let b = serverContext.sensitivity / serverContext.epsilon;
-        noisePlain[s] = BigInt(Math.round(cdf.laplace(1, 0, b)[0]));
+        noisePlain[s] = BigInt(Math.round(laplace(1, 0, b)[0]));
       }
       const noise = seal.PlainText();
       encoder.encode(noisePlain, noise);

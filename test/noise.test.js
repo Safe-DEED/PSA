@@ -1,5 +1,5 @@
 import PSA from '../src/index';
-import { cdf } from '../src/laplace';
+import { laplace } from '../src/laplace';
 
 //dirty little test function
 function matmul(vec, mat) {
@@ -15,7 +15,7 @@ function matmul(vec, mat) {
   return res;
 }
 
-describe('test with no masking', () => {
+describe('test with added noise', () => {
   it('no masking', async () => {
     const psaConf = {
       polyModulusDegree: 4096,

@@ -16,9 +16,7 @@ var _MatMul = require("./MatMul");
 
 var _masking = require("./masking");
 
-var _laplace = _interopRequireDefault(require("./laplace"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _laplace = require("./laplace");
 
 /**
  * Generate a zero-filled BigUint64Array
@@ -139,7 +137,7 @@ function decrypt(encryptedResult, {
     }
 
     const plainText = decryptor.decrypt(cipherText);
-    const decoded = encoder.decodeBigInt(plainText, false);
+    const decoded = encoder.decodeBigInt(plainText);
     cipherText.delete();
     plainText.delete();
     return decoded;
@@ -201,7 +199,7 @@ function compute(encryptedArray, hw, matrix, serverContext) {
 
       for (let s = 0; s < slotCount; ++s) {
         let b = serverContext.sensitivity / serverContext.epsilon;
-        noisePlain[s] = BigInt(Math.round(_laplace.default.laplace(1, 0, b)[0]));
+        noisePlain[s] = BigInt(Math.round((0, _laplace.laplace)(1, 0, b)[0]));
       }
 
       const noise = seal.PlainText();
