@@ -49,7 +49,7 @@ describe('test without serialization', () => {
     const clientRequest = PSA.stringify(
       PSA.clientEncrypt(array, clientContext, false)
     );
-    const serverResponse = PSA.serverCompute(
+    const serverResponse = await PSA.serverCompute(
       clientRequest,
       matrix,
       serverContext,

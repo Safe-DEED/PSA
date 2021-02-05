@@ -44,8 +44,8 @@ describe('test with too small hamming weight', () => {
         [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
     const clientRequest = PSA.clientEncrypt(array, clientContext);
-    expect(() =>
-      PSA.serverCompute(clientRequest, matrix, serverContext)
+    expect(async () =>
+      await PSA.serverCompute(clientRequest, matrix, serverContext)
     ).toThrowError();
   }, 9000000);
 });

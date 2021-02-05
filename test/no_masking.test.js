@@ -44,7 +44,7 @@ describe('test with no masking', () => {
         [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
     const clientRequest = PSA.clientEncrypt(array, clientContext);
-    const serverResponse = PSA.serverCompute(
+    const serverResponse = await PSA.serverCompute(
       clientRequest,
       matrix,
       serverContext
