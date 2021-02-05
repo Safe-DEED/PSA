@@ -4,8 +4,7 @@ import {
   getServerResponseObject,
   compute,
   decrypt,
-  encrypt,
-  parse
+  encrypt
 } from './apiUtil';
 
 /**
@@ -89,45 +88,53 @@ async function getServerContext({
  * This function encrypts the client's input vector and returns an object ready to be sent to the server.
  * @param {number[]} inputArray 1D array of numbers
  * @param {Object} clientContext client side context
- * @returns {string} JSON string to be sent to server without further processing for serverCompute()
+ * @param {Object} serialize true if output should be stringified
+ * @returns {Object | string} Context object in optionally unstringified form to be sent to server for serverCompute()
  */
-function clientEncrypt(inputArray, clientContext) {
+function clientEncrypt(inputArray, clientContext, serialize = true) {
   const encryptedArray = encrypt(inputArray, clientContext);
   const hw = BigInt(
     clientContext.maskHW ? inputArray.reduce((a, b) => a + b, 0) : 0
   );
-  return getClientRequestObject(encryptedArray, hw, clientContext);
+  return getClientRequestObject(encryptedArray, hw, clientContext, serialize);
 }
 
 /**
  * This function decrypts the server response object. The result will be in the first n cells, if the matrix was of dimension (m x n).
- * @param {string} serverResponseObject server response object (JSON), received from the server
+ * @param {Object | string} serverResponseObject server response object (JSON string or Object), received from the server
  * @param {Object} clientContext client side context
  * @returns {BigUint64Array[]} resulting array
  */
 function clientDecrypt(serverResponseObject, clientContext) {
-  const encryptedResult = JSON.parse(serverResponseObject);
+  const encryptedResult =
+    typeof serverResponseObject === 'string'
+      ? parse(serverResponseObject)
+      : serverResponseObject;
   return decrypt(encryptedResult, clientContext);
 }
 
 /**
  * This function computes the dot product between the encrypted client vector and the server matrix.
  * Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n).
- * @param {string} clientRequestObject client request object (JSON), received from client
+ * @param {string | Object} clientRequestObject client request object (JSON string or Object), received from client
  * @param {number[]} matrix a 2D array of Numbers.
  * @param {Object} serverContext server side context
- * @returns {string} JSON to be sent to client for decryption with clientDecrypt()
+ * @param {boolean} serialize true if output should be stringified
+ * @returns {string | Object} Context object in optionally unstringified form to be sent to client for decryption with clientDecrypt()
  */
 
-function serverCompute(clientRequestObject, matrix, serverContext) {
+function serverCompute(
+  clientRequestObject,
+  matrix,
+  serverContext,
+  serialize = true
+) {
   const seal = serverContext.seal;
   const context = serverContext.context;
-  const {
-    encryptedArray: arrayOfBase64EncodedCiphertexts,
-    hw,
-    galois,
-    relin
-  } = parse(clientRequestObject);
+  const { encryptedArray: arrayOfBase64EncodedCiphertexts, hw, galois, relin } =
+    typeof clientRequestObject === 'string'
+      ? parse(clientRequestObject)
+      : clientRequestObject;
 
   if (serverContext.maskHW && hw < serverContext.minHW) {
     throw new Error('Client Hamming weight too small!');
@@ -150,7 +157,39 @@ function serverCompute(clientRequestObject, matrix, serverContext) {
     serverContext
   );
 
-  return getServerResponseObject(computationResult);
+  return getServerResponseObject(computationResult, serialize);
+}
+
+/**
+ * This function is a replacement for JSON.stringify() since it is missing the functionality
+ * to stringify BigInts.
+ * @param {Object} value the object to be stringified
+ * @returns {string} the resulting JSON string
+ */
+function stringify(value) {
+  if (value !== undefined) {
+    return JSON.stringify(value, (_, v) =>
+      typeof v === 'bigint' ? `${v}n` : v
+    );
+  }
+}
+
+/**
+ * This function is a replacement for JSON.parse() and adds the functionality to parse BigInts,
+ * since this is necessary for this protocol.
+ * @param {string} text JSON string
+ * @returns {Object} the parsed object
+ */
+function parse(text) {
+  return JSON.parse(text, (_, value) => {
+    if (typeof value === 'string') {
+      const m = value.match(/(-?\d+)n/);
+      if (m && m[0] === value) {
+        value = BigInt(m[1]);
+      }
+    }
+    return value;
+  });
 }
 
 export default {
@@ -158,5 +197,7 @@ export default {
   getServerContext,
   clientEncrypt,
   clientDecrypt,
-  serverCompute
+  serverCompute,
+  parse,
+  stringify
 };

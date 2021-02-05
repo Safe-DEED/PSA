@@ -7,8 +7,6 @@ exports.getFilledBigUint64Array = getFilledBigUint64Array;
 exports.encrypt = encrypt;
 exports.decrypt = decrypt;
 exports.compute = compute;
-exports.stringify = stringify;
-exports.parse = parse;
 exports.getClientRequestObject = getClientRequestObject;
 exports.getServerResponseObject = getServerResponseObject;
 
@@ -19,11 +17,23 @@ var _masking = require("./masking");
 var _laplace = require("./laplace");
 
 /**
+ * Function to replace JSON.stringify since it does not offer marshalling of BigInts
+ * @param value
+ * @returns {string}
+ */
+function stringify(value) {
+  if (value !== undefined) {
+    return JSON.stringify(value, (_, v) => typeof v === 'bigint' ? `${v}n` : v);
+  }
+}
+/**
  * Generate a zero-filled BigUint64Array
  * @param {number} length The size of the array
  * @param {number} value to be used to fill the array with
  * @returns {BigUint64Array}
  */
+
+
 function getFilledBigUint64Array(length, value) {
   return BigUint64Array.from({
     length
@@ -227,26 +237,6 @@ function compute(encryptedArray, hw, matrix, serverContext) {
 function getSerializedGaloisKeys(clientContext) {
   return clientContext.galoisKeys.save(clientContext.compression);
 }
-
-function stringify(value) {
-  if (value !== undefined) {
-    return JSON.stringify(value, (_, v) => typeof v === 'bigint' ? `${v}n` : v);
-  }
-}
-
-function parse(text) {
-  return JSON.parse(text, (_, value) => {
-    if (typeof value === 'string') {
-      const m = value.match(/(-?\d+)n/);
-
-      if (m && m[0] === value) {
-        value = BigInt(m[1]);
-      }
-    }
-
-    return value;
-  });
-}
 /**
  *
  * @param {string[]} encryptedArray
@@ -254,7 +244,8 @@ function parse(text) {
  * @param {Object} options
  * @param {Object} options.compression
  * @param {Object} options.galoisKeys
- * @returns {string}
+ * @param serialize
+ * @returns {Object | string}
  */
 
 
@@ -263,7 +254,7 @@ function getClientRequestObject(encryptedArray, hw, {
   galoisKeys,
   relinKeys,
   maskBin
-}) {
+}, serialize) {
   const galois = galoisKeys.save(compression);
   let relin;
 
@@ -271,20 +262,22 @@ function getClientRequestObject(encryptedArray, hw, {
     relin = relinKeys.save(compression);
   }
 
-  return stringify({
+  const obj = {
     encryptedArray,
     hw,
     galois,
     relin
-  });
+  };
+  return serialize ? stringify(obj) : obj;
 }
 /**
  * Stringify a server response
  * @param {string[]} computationResult
- * @returns {string}
+ * @param {boolean} serialize
+ * @returns {Object | string}
  */
 
 
-function getServerResponseObject(computationResult) {
-  return JSON.stringify(computationResult);
+function getServerResponseObject(computationResult, serialize) {
+  return serialize ? stringify(computationResult) : computationResult;
 }

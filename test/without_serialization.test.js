@@ -1,5 +1,4 @@
 import PSA from '../src/index';
-import { laplace } from '../src/laplace';
 
 //dirty little test function
 function matmul(vec, mat) {
@@ -15,8 +14,8 @@ function matmul(vec, mat) {
   return res;
 }
 
-describe('test with added noise', () => {
-  it('no masking', async () => {
+describe('test without serialization', () => {
+  it('passing false as serialize paramter', async () => {
     const psaConf = {
       polyModulusDegree: 4096,
       plainModulusBitSize: 20,
@@ -47,27 +46,15 @@ describe('test with added noise', () => {
       [72], [73], [74], [75], [76], [77], [78], [79], [80], [81], [82], [83], [84], [85], [86], [87], [88], [89],
       [90], [91], [92], [93], [94], [95], [96], [97], [98], [99]];
 
-    const clientRequest = PSA.clientEncrypt(array, clientContext);
+    const clientRequest = PSA.stringify(
+      PSA.clientEncrypt(array, clientContext, false)
+    );
     const serverResponse = PSA.serverCompute(
       clientRequest,
       matrix,
-      serverContext
+      serverContext,
+      false
     );
-
-    // ------------------ TEST---------
-    const computationResult = JSON.parse(serverResponse);
-    for (let i = 0; i < computationResult.length; ++i) {
-      const cipherText = clientContext.seal.CipherText();
-      cipherText.load(clientContext.context, computationResult[i]);
-      const noiseBudget = clientContext.decryptor.invariantNoiseBudget(
-        cipherText
-      );
-      console.log('noise budget: ' + noiseBudget);
-      if (noiseBudget <= 0) {
-        throw new Error('noise budget consumed');
-      }
-    }
-    //------------------------
 
     const result = PSA.clientDecrypt(serverResponse, clientContext);
     console.log(result);

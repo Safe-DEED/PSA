@@ -3,6 +3,19 @@ import { computeMask } from './masking';
 import { laplace } from './laplace';
 
 /**
+ * Function to replace JSON.stringify since it does not offer marshalling of BigInts
+ * @param value
+ * @returns {string}
+ */
+function stringify(value) {
+  if (value !== undefined) {
+    return JSON.stringify(value, (_, v) =>
+      typeof v === 'bigint' ? `${v}n` : v
+    );
+  }
+}
+
+/**
  * Generate a zero-filled BigUint64Array
  * @param {number} length The size of the array
  * @param {number} value to be used to fill the array with
@@ -196,26 +209,6 @@ function getSerializedGaloisKeys(clientContext) {
   return clientContext.galoisKeys.save(clientContext.compression);
 }
 
-export function stringify(value) {
-  if (value !== undefined) {
-    return JSON.stringify(value, (_, v) =>
-      typeof v === 'bigint' ? `${v}n` : v
-    );
-  }
-}
-
-export function parse(text) {
-  return JSON.parse(text, (_, value) => {
-    if (typeof value === 'string') {
-      const m = value.match(/(-?\d+)n/);
-      if (m && m[0] === value) {
-        value = BigInt(m[1]);
-      }
-    }
-    return value;
-  });
-}
-
 /**
  *
  * @param {string[]} encryptedArray
@@ -223,28 +216,32 @@ export function parse(text) {
  * @param {Object} options
  * @param {Object} options.compression
  * @param {Object} options.galoisKeys
- * @returns {string}
+ * @param serialize
+ * @returns {Object | string}
  */
 
 export function getClientRequestObject(
   encryptedArray,
   hw,
-  { compression, galoisKeys, relinKeys, maskBin }
+  { compression, galoisKeys, relinKeys, maskBin },
+  serialize
 ) {
   const galois = galoisKeys.save(compression);
   let relin;
   if (maskBin) {
     relin = relinKeys.save(compression);
   }
-  return stringify({ encryptedArray, hw, galois, relin });
+  const obj = { encryptedArray, hw, galois, relin };
+  return serialize ? stringify(obj) : obj;
 }
 
 /**
  * Stringify a server response
  * @param {string[]} computationResult
- * @returns {string}
+ * @param {boolean} serialize
+ * @returns {Object | string}
  */
 
-export function getServerResponseObject(computationResult) {
-  return JSON.stringify(computationResult);
+export function getServerResponseObject(computationResult, serialize) {
+  return serialize ? stringify(computationResult) : computationResult;
 }

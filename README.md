@@ -98,6 +98,10 @@ We are happy to welcome everyone who is willing to contribute. The workflow is a
     -   [Parameters](#parameters-3)
 -   [serverCompute](#servercompute)
     -   [Parameters](#parameters-4)
+-   [stringify](#stringify)
+    -   [Parameters](#parameters-5)
+-   [parse](#parse)
+    -   [Parameters](#parameters-6)
 
 #### getClientContext
 
@@ -146,8 +150,9 @@ This function encrypts the client's input vector and returns an object ready to 
 
 -   `inputArray` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** 1D array of numbers
 -   `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
+-   `serialize` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** true if output should be stringified (optional, default `true`)
 
-Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON string to be sent to server without further processing for serverCompute()
+Returns **([Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object) \| [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String))** Context object in optionally unstringified form to be sent to server for serverCompute()
 
 #### clientDecrypt
 
@@ -155,7 +160,7 @@ This function decrypts the server response object. The result will be in the fir
 
 ##### Parameters
 
--   `serverResponseObject` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** server response object (JSON), received from the server
+-   `serverResponseObject` **([Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object) \| [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String))** server response object (JSON string or Object), received from the server
 -   `clientContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** client side context
 
 Returns **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;BigUint64Array>** resulting array
@@ -167,11 +172,34 @@ Constraints: If vector is of dimensions (1 x m), then matrix has to be of (m x n
 
 ##### Parameters
 
--   `clientRequestObject` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** client request object (JSON), received from client
+-   `clientRequestObject` **([string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object))** client request object (JSON string or Object), received from client
 -   `matrix` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** a 2D array of Numbers.
 -   `serverContext` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** server side context
+-   `serialize` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if output should be stringified (optional, default `true`)
 
-Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON to be sent to client for decryption with clientDecrypt()
+Returns **([string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object))** Context object in optionally unstringified form to be sent to client for decryption with clientDecrypt()
+
+#### stringify
+
+This function is a replacement for JSON.stringify() since it is missing the functionality
+to stringify BigInts.
+
+##### Parameters
+
+-   `value` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the object to be stringified
+
+Returns **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the resulting JSON string
+
+#### parse
+
+This function is a replacement for JSON.parse() and adds the functionality to parse BigInts,
+since this is necessary for this protocol.
+
+##### Parameters
+
+-   `text` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** JSON string
+
+Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the parsed object
 
 ## Acknowledgements
 
